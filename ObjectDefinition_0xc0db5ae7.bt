@@ -1,0 +1,150 @@
+//------------------------------------------------
+//--- 010 Editor v12.0 Binary Template
+//
+// Disclaimer: This is not an official EA binary
+// template. It was created by Frankk, based on
+// the S4PE implementation of object definitions.
+//
+// Frankk's site: https://frankkmods.com
+//
+// S4PE link: https://github.com/s4ptacle/Sims4Tools/blob/fff19365a12711879bad26481a393a6fbc62c465/s4pi%20Wrappers/CatalogResource/ObjectDefinitionResource.cs
+//
+//------------------------------------------------
+
+
+LittleEndian();
+BitfieldRightToLeft();
+
+uint16 version;
+uint32 tablePosition;
+FSeek(tablePosition);
+uint16 entryCount;
+
+typedef struct
+{
+    uint32 instance <format=hex>;
+    uint32 instanceEx <format=hex>;
+    uint32 type <format=hex>;
+    uint32 group <format=hex>;
+} ResourceKey;
+
+typedef struct
+{
+    uint32 length;
+    if (length > 0)
+        char chars[length];
+} StringValue <read=GetStringValue>;
+
+wstring GetStringValue(StringValue& str)
+{
+    if (str.length > 0)
+        return StringToWString(str.chars, CHARSET_UTF8);
+    return L"";
+}
+
+typedef struct
+{
+    uint32 type <format=hex>;
+    uint32 offset;
+
+    local uint32 start = FTell();
+    FSeek(offset);
+
+    switch(type)
+    {
+    case 0xE7F07786: // "Name"
+    case 0x790FA4BC: // "Tuning"
+    case 0xECD5A95F: // "MaterialVariant"
+        StringValue name;
+        break;
+    case 0xB994039B: // "TuningID"
+        uint64 tuningId;
+        break;
+    case 0xCADED888: // "Icon"
+    case 0xE206AE4F: // "Rig"
+    case 0x8A85AFF3: // "Slot"
+    case 0x8D20ACC6: // "Model"
+    case 0x6C737AD8: // "Footprint"
+        int32 chunks;
+        ResourceKey keys[chunks / 4];
+        break;
+    case 0xE6E421FB: // "Components"
+        int32 count;
+        uint32 components[count];
+        break;
+    case 0xAC8E1BC0: // "Unknown1"
+        ubyte unknown1;
+        break;
+    case 0xE4F4FAA4: // "SimoleonPrice"
+        uint32 simoleonPrice;
+        break;
+    case 0x7236BEEA: // "PositiveEnvironmentScore"
+        float positiveEnvironmentScore;
+        break;
+    case 0x44FC7512: // "NegativeEnvironmentScore"
+        float negativeEnvironmentScore;
+        break;
+    case 0x4233F8A0: // "ThumbnailGeometryState"
+        uint32 thumbnailGeometryState;
+        break;
+    case 0xEC3712E6: // "Unknown2"
+        ubyte unknown1;
+        break;
+    case 0x2172AEBE: // "EnvironmentScoreEmotionTags"
+        int32 count;
+        uint16 environmentScoreEmotionTags[count];
+        break;
+    case 0x2143974C: // "EnvironmentScoreEmotionTags_32"
+        int32 count;
+        uint32 environmentScoreEmotionTags[count];
+        break;
+    case 0xDCD08394: // "EnvironmentScores"
+        uint32 count;
+        float environmentScores[count];
+        break;
+    case 0x52F7F4BC: // "Unknown3"
+        uint64 unknown3;
+        break;
+    case 0xAEE67A1C: // "IsBaby"
+        ubyte isBaby;
+        break;
+    case 0xF3936A90: // "Unknown4"
+        uint32 count;
+        ubyte unknown4[count];
+        break;
+    }
+
+    FSeek(start);
+} Property <read=ReadProperty>;
+
+string ReadProperty(Property& p)
+{
+    switch(p.type)
+    {
+    case 0xE7F07786: return "Name";
+    case 0x790FA4BC: return "Tuning";
+    case 0xB994039B: return "TuningID";
+    case 0xCADED888: return "Icon";
+    case 0xE206AE4F: return "Rig";
+    case 0x8A85AFF3: return "Slot";
+    case 0x8D20ACC6: return "Model";
+    case 0x6C737AD8: return "Footprint";
+    case 0xE6E421FB: return "Components";
+    case 0xECD5A95F: return "MaterialVariant";
+    case 0xAC8E1BC0: return "Unknown1";
+    case 0xE4F4FAA4: return "SimoleonPrice";
+    case 0x7236BEEA: return "PositiveEnvironmentScore";
+    case 0x44FC7512: return "NegativeEnvironmentScore";
+    case 0x4233F8A0: return "ThumbnailGeometryState";
+    case 0xEC3712E6: return "Unknown2";
+    case 0x2172AEBE: return "EnvironmentScoreEmotionTags";
+    case 0xDCD08394: return "EnvironmentScores";
+    case 0x52F7F4BC: return "Unknown3";
+    case 0xAEE67A1C: return "IsBaby";
+    case 0xF3936A90: return "Unknown4";
+    case 0x2143974C: return "EnvironmentScoreEmotionTags_32";
+    }
+    return "Unknown"; 
+}
+
+Property mProperty[entryCount] <optimize=false>;

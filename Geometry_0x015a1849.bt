@@ -1,0 +1,222 @@
+//--------------------------------------
+// The Sims 4
+// Copyright 2014 Electronic Arts Inc. All rights reserved.
+//
+//--- 010 Editor v5.0.2 Binary Template
+// Resource Type: CAS Geometry Resource (0x015a1849) Version 12
+//--------------------------------------
+
+typedef struct
+{
+    float x;
+    float y;
+} Vec2;
+
+typedef struct
+{
+    float x;
+    float y;
+    float z;
+} Vec3;
+
+typedef struct
+{
+    float x;
+    float y;
+    float z;
+    float w;
+} Quat;
+
+typedef struct
+{
+    UINT32 type <format=hex>;
+    UINT32 group <format=hex>;
+    UINT64 instance <format=hex>;
+} ResourceKey;
+
+typedef struct
+{
+    UINT64 instance <format=hex>;
+    UINT32 type <format=hex>;
+    UINT32 group <format=hex>;
+} ResourceKeyInstanceFirst;
+
+//  Loader context Data
+typedef struct
+{
+    UINT32 position <format=hex>;
+    UINT32 length;
+} ObjectData;
+
+typedef struct
+{
+    UINT32 mContextversion;
+    UINT32 mPublicKeyCount;
+    UINT32 mExternalKeyCount;
+    UINT32 mDelayLoadKeyCount;
+    UINT32 mObjectCount;
+    
+    if(mPublicKeyCount > 0)
+    {
+        ResourceKeyInstanceFirst mPublicObject[mPublicKeyCount];
+    }
+    if(mObjectCount-mPublicKeyCount > 0)
+    {
+        ResourceKeyInstanceFirst mPrivateObject[mObjectCount-mPublicKeyCount];
+    }
+    if(mExternalKeyCount > 0)
+    {
+        ResourceKeyInstanceFirst mExternalReferences[mExternalKeyCount];
+    }
+    if(mDelayLoadKeyCount > 0)
+    {
+        ResourceKeyInstanceFirst mDelayLoadReferences[mDelayLoadKeyCount];
+    }
+    if(mObjectCount > 0)
+    {
+        ObjectData mObjectData[mObjectCount];
+    }
+} ContextData;
+
+ContextData mContextData;
+
+//
+BYTE mGEOMSignature[4];  // 'GEOM'
+UINT32 mGEOMVersion;
+
+//
+typedef struct
+{
+    UINT32 mResKeyTableOffset <format=hex>;
+    UINT32 mResKeyTableSize;
+    
+    local int p = FTell();
+    FSkip(mResKeyTableOffset-sizeof(UINT32));
+    UINT32 mReskeyTableCount;
+    ResourceKey mReskeyTable[mReskeyTableCount];
+    FSeek(p);
+
+} ResKeyTable;
+
+ResKeyTable mResKeyTable;
+
+//
+UINT32 mShaderID <format=hex>;
+UINT32 mMatBlockSize;
+BYTE mMatData[mMatBlockSize];
+
+UINT32 mMergeGroup;
+UINT32 mMergeOrder;
+
+UINT32 mNumVerts;
+UINT32 mNumVertElements;
+
+enum VertexDeclFlags
+{
+    VERTEXDECL_NONE        = 0,
+    VERTEXDECL_POSITION    = 1,
+    VERTEXDECL_NORMAL      = 2,
+    VERTEXDECL_UV          = 3,
+    VERTEXDECL_BONEINDICES = 4,
+    VERTEXDECL_WEIGHTS     = 5,
+    VERTEXDECL_TANGENT     = 6,
+    VERTEXDECL_COLOR       = 7,
+    VERTEXDECL_BINORMAL    = 8,
+    VERTEXDECL_WEIGHTMAP   = 9,
+    VERTEXDECL_VERTEXINDEX = 10
+};
+enum VertexDeclType
+{
+    VERTEXDECLTYPE_NONE   = 0,
+    VERTEXDECLTYPE_FLOAT  = 1,
+    VERTEXDECLTYPE_UBYTE4 = 2,
+    VERTEXDECLTYPE_COLOR  = 3,
+    VERTEXDECLTYPE_INT    = 4
+};
+
+typedef struct
+{
+    VertexDeclFlags  flags;
+    VertexDeclType  type;
+    UCHAR  size;
+} VertElement;
+
+VertElement mVertElements[mNumVertElements];
+
+local int i, vertexstride = 0;
+for( i = 0; i < mNumVertElements; i++ )
+    vertexstride += mVertElements[i].size;
+
+UINT32 mVertData[(vertexstride*mNumVerts)>>2];
+
+//  Submesh Data
+typedef struct
+{
+    UCHAR  mIndexSize;
+    UINT32  mNumIndices;
+
+    if ( mIndexSize == 2)
+        UINT16 mIndices[mNumIndices];
+    else
+        UINT32 mIndices[mNumIndices];
+} SubMesh;
+
+UINT32 mNumSubMeshes;
+SubMesh  mSubMesh[mNumSubMeshes] <optimize=false>;
+
+// Stich data
+//
+// Stitches UVs in the second UV channel along geometry seams.
+//
+typedef struct
+{
+    UINT32 index;
+    UINT32 count;
+    Vec2 uv[count];
+} UVStitch;
+
+typedef struct
+{
+    UINT32      UVStitchCount;
+    UVStitch    UVStitchData[UVStitchCount]  <optimize=false>;
+} UVData;
+
+UVData mUVData;
+
+//
+// Slot Ray Intersection Data
+//
+//  The slot offset system positions slots on a Sim, 
+//  taking into account the different geometries of the different CAS parts, 
+//  as well as the various deformations that can be applied to those geometries.
+//
+//  The goal is to find the point on the surface of the geometry that corresponds to each slot. 
+//  For each slot, a ray is constructed from the raycast origin, through the average slot position. 
+//  For some slots, the raycast origin and the average slot position will be the same – this signifies 
+//  that the slot is immovable and it is ignored by the algorithm. The raycast origins of all the 
+//  slots should be inside of the geometry. The average slot positions may be inside, on the surface of, 
+//  or outside the geometry.  The intersection point between the slot ray and the geometry is the surface 
+//  point we’re looking for, and each mesh’s triangles are tested against the ray to find it.
+//
+
+typedef struct
+{
+    UINT32 slotindex;
+    UINT16 indices[3];                  // The indices of the three vertices that make up the intersection triangle (v0, v1, v2)
+    float coordinates[2];               // The Barycentric coordinates of the point of intersection (b1, b2; b0 = 1 - b1 - b2)
+    float distance;                     // The distance from raycast origin to the intersection point
+    Vec3 mOffsetFromIntersectionOS;     // The offset from the intersection point to the slot's average position (if outside geometry) in object space
+    Vec3 mSlotAveragePosOS;             // The slot's average position in object space
+    Quat mTransformToLS;                // The transform from object space to the slot's local space
+    UCHAR mPivotBoneIdx;                // The index of the bone that this slot pivots around (or INVALID_BONE_IDX [0xff] if the slot does not pivot).
+} SlotIntersection;
+
+UINT32              mSlotCount;
+if(mSlotCount > 0)
+{
+    SlotIntersection    mSlotIntersectionData[mSlotCount];
+}
+
+// Bone Info
+UINT32      mBoneCount;
+UINT32      mjointHashes[mBoneCount] <format=hex>;

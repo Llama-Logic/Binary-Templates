@@ -1,0 +1,72 @@
+//--------------------------------------
+// The Sims 4
+// Copyright 2018 Electronic Arts Inc.
+//
+//--- 010 Editor v8.0 Binary Template
+// Resource Type: Terrain Mesh Resource (0xae39399f) Version 0x200
+//--------------------------------------
+
+uint32 version <format=hex>;
+if(version != 0x200)  // Base Game shipped with version 0x200
+{
+    Warning("Unknown version (0x%x). Please update the template", version);
+    return -1;
+}
+
+uint32 vertCount;
+uint32 indexCount;
+uint32 layerIndexCount;
+uint32 passCount;
+
+uint16 min[3];
+uint16 max[3];
+
+typedef struct
+{
+    int16 x;
+    int16 y;
+    int16 z;
+    int16 morphY;
+} TerrainVertex;
+
+if (vertCount > 0)
+{
+    // Note that vert data is a delta from the prevoiou vert. To get decoded value, add 
+    // the accumulation of all previous values.
+    //      decoded_vert[n].x      = vert[n].x       + vert[n-1].x      + vert[n-2].x      + etc.
+    //      decoded_vert[n].y      = vert[n].y       + vert[n-1].y      + vert[n-2].y      + etc.
+    //      decoded_vert[n].z      = vert[n].z       + vert[n-1].z      + vert[n-2].z      + etc.
+    //      decoded_vert[n].morphY = vert[n].xmorphY + vert[n-1].morphY + vert[n-2].morphY + etc.
+    TerrainVertex verts[vertCount];
+}
+
+if (indexCount > 0 )
+{
+    // Note that index data is a delta from the previous index. To get decoded value, add 
+    // the accumulation of all previous values.
+    //      decoded_indices[n] = indices[n] + indices[n-1] + indices[n-2] + etc.
+    uint16 indices[indexCount];
+}
+
+typedef struct 
+{
+    uint16  bounds[6];
+    uchar   isOpaque;
+    uchar   isLighting;
+    uchar   layerCount;
+    if (layerCount > 0)
+    {
+        uchar   layers[layerCount];
+    }
+
+    uint32 triCount;
+    if (triCount > 0)  
+    {
+        uint32 triangles[triCount];    
+    }
+} Pass <optimize=false>;
+
+if (passCount > 0)
+{
+    Pass passes[passCount];
+}

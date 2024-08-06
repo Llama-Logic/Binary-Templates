@@ -1,0 +1,230 @@
+//--------------------------------------
+// The Sims 4
+// Copyright 2015 Electronic Arts Inc. All rights reserved.
+//
+//--- 010 Editor v6.0.2 Binary Template
+// Resource Type: Binary template for CTProduct resource (type 0x319e4f1d) Version 25
+//--------------------------------------
+
+LittleEndian();
+BitfieldLeftToRight();
+
+typedef struct
+{
+    UINT32 count;
+    UINT16 value[count];
+} UINT16Array <read=ReadUINT16Array>;
+
+string ReadUINT16Array(UINT16Array& a)
+{
+    string s;
+    SPrintf(s, "%d entrie(s)", a.count);
+    return s;
+}
+
+
+typedef struct
+{
+    UINT32 count;
+    UINT32 value[count];
+} UINT32Array <read=ReadUINT32Array>;
+
+string ReadUINT32Array(UINT32Array& a)
+{
+    string s;
+    SPrintf(s, "%d entrie(s)", a.count);
+    return s;
+}
+
+
+typedef struct
+{
+    UINT64 instance <format=hex>;
+    UINT32 type <format=hex>;
+    UINT32 group <format=hex>;
+} ResourceKey <read=ReadResourceKey>;
+
+string ReadResourceKey(ResourceKey& key)
+{
+    string s;
+    SPrintf(s, "%08x:%08x:%016Lx", key.type, key.group, key.instance);
+    return s;
+}
+
+typedef struct
+{
+    BYTE count;
+    if ( count != 0 )
+    {
+        ResourceKey key[count];
+    }
+} ResourceKeyArray <read=ReadResourceKeyArray>;
+
+string ReadResourceKeyArray(ResourceKeyArray& keyArray)
+{
+    if(keyArray.count == 1)
+        return ReadResourceKey(keyArray.key[0]);
+    else
+    {
+        string s;
+        SPrintf(s, "%d keys", keyArray.count);
+        return s;
+    }
+}
+
+typedef struct
+{
+    UINT32 version;
+    if(version > 1)
+    {
+        Warning("Unknown version of AuralMaterials detected. Please update the template.");
+        return -1;
+    }
+    UINT32 mAuralMaterials[3];
+} AuralMaterials;
+
+
+typedef struct
+{
+    AuralMaterials materials;
+    UINT32 version;
+    if(version > 3)
+    {
+        Warning("Unknown version of AuralProperties detected. Please update the template.");
+        return -1;
+    }
+    UINT32 mAuralQuality;
+    if(version > 1)
+    {
+        UINT32 mAuralAmbientObject;
+    }
+    if(version > 2)
+    {
+        UINT64  mAmbienceFileInstanceId;
+        UCHAR   isOverrideAmbience;
+    }
+
+} AuralProperties;
+
+typedef struct
+{
+    UINT16 mLocalizedStringTag;
+    UINT32 mValue;
+} ObjectTooltipTagItem;
+
+typedef struct
+{
+    UINT32 count;
+    if ( count > 0 )
+    {
+        ObjectTooltipTagItem items[count];
+    }
+} ObjectTooltipTagItemArray <read=ReadObjectTooltipTagItemArray>;
+
+string ReadObjectTooltipTagItemArray(ObjectTooltipTagItemArray& ot)
+{
+    string s;
+    SPrintf(s, "%d item(s)", ot.count);
+    return s;
+}
+
+typedef struct
+{
+    UINT32 versionCTProduct;
+    if(versionCTProduct > 11)  // Note Base Game Shipped with version 9
+    {
+        Warning("Unknown verion of CTProduct detected. Please update the template.");
+        return -1;
+    }
+    UINT32 mNameKey <format=hex>;
+    UINT32 mDescriptionKey <format=hex>;
+    UINT32 mSimoleonPrice;
+    UINT64 mThumbnailHash <format=hex>;
+    UINT32 mDevCategoryFlags <format=hex>;
+    ResourceKeyArray mStyleKeySet;
+
+    if (versionCTProduct >= 10)
+    {
+        typedef struct
+        {
+            BYTE mReserved_set_to_0 : 7;
+            BYTE hide_pack_icon     : 1;
+        } PackFlags;
+    
+        INT16       mPackID <comment="The pack this item belongs to, will not appear in catalog if this pack is not owned">;
+        PackFlags   mPackFlags;
+        BYTE        mReserved_set_to_0[9];   // Must be 0
+    }
+    else
+    {
+        BYTE unused2;
+        if(unused2 > 0)
+            BYTE unused3;
+    }
+    if (versionCTProduct >= 11)
+    {
+        UINT32Array tagsIndex;
+    }
+    else
+    {
+        UINT16Array tagsIndex;
+    }
+
+    ObjectTooltipTagItemArray mObjectTooltipTags;
+    UINT32 mGameplayLockedDescriptionKey <format=hex>;
+    UINT32 mGameplayUnlockedDescriptionKey <format=hex>;
+    UINT16 mSwatchColorsSortPriority;
+    UINT64 mVariantThumbImageHash <format=hex>;
+
+} CTProduct;
+
+typedef struct
+{
+    BYTE usedColorCount;
+    if (usedColorCount>0)
+    {
+        UINT32 rawData[usedColorCount] <format=hex>;
+    }
+} SwatchColorSet <read=ReadSwatchColorSet>;
+
+string ReadSwatchColorSet(SwatchColorSet& sw)
+{
+    string s;
+    SPrintf(s, "%d color(s)", sw.usedColorCount);
+    return s;
+}
+
+typedef struct
+{
+    UINT32 version;  // Note BG shipped with V24
+    if(version > 25)
+    {
+        Warning("Unknown version of CTProductObject detected. Please update the template.");
+        return -1;
+    }
+    CTProduct product;
+
+    AuralProperties auralProperties;
+
+    UINT32 unused0 <format=hex>;
+    UINT32 unused1 <format=hex>;
+    UINT32 unused2 <format=hex>;
+    UINT32 mPlacementFlagsHigh <format=hex>;
+    UINT32 mPlacementFlagsLow  <format=hex>;
+    UINT64 mSlotTypeSet;
+    BYTE mSlotDecoSize;
+    UINT64 mCatalogGroup <format=hex, comment="Controls sorting of catalog items">;
+    BYTE mStateUsage;
+    SwatchColorSet mSwatchColors;
+    UINT32 mFenceHeight;
+    BYTE mIsStackable;
+    BYTE mCanItemDepreciate;
+
+    if(version >= 25)
+    {
+        ResourceKey mFallBackObjectKey;
+    }
+
+} CTProductObject;
+
+CTProductObject product;

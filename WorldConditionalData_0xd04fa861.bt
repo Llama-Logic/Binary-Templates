@@ -1,0 +1,59 @@
+//--------------------------------------
+// The Sims 4
+// Copyright 2016 Electronic Arts Inc. All rights reserved.
+//
+//--- 010 Editor v7.0.2 Binary Template
+// Resource Type: World Conditional Data (type 0xd04fa861).  Version 1.
+//--------------------------------------
+
+typedef struct
+{
+    uint64 instance <format=hex>;
+    uint32 type <format=hex>;
+    uint32 group <format=hex>;
+} ResourceKey <read=ReadResourceKey>;
+
+string ReadResourceKey(ResourceKey& key)
+{
+    string s;
+    SPrintf(s, "%08x:%08x:%016Lx", key.type, key.group, key.instance);
+    return s;
+}
+
+
+uint32 version;
+if(version != 1)
+{
+    Warning("Unknown version");
+    return -1;
+}
+
+typedef struct
+{
+    ResourceKey footprintKey;
+    float pos[3];
+    float quat[4];
+    float scale;
+    uint64 objectDefinition <format=hex>;
+    uint64 objectID         <format=hex>;
+    char minSpecLOD;
+    uint64 parentID         <format=hex>;
+    uint32 slotHash         <format=hex>;
+} Object;
+
+typedef struct 
+{
+    uint32 layerNameHash <format=hex>;
+    uint32 numObjects;
+    if (numObjects > 0)
+    {
+        Object objects[numObjects] <optimize=false>;
+    }
+} Layer;
+
+uint32 layerCount;
+if ( layerCount > 0 )
+{
+    Layer layers[layerCount] <optimize=false>;
+}
+  

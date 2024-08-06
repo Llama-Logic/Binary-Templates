@@ -1,0 +1,54 @@
+//--------------------------------------
+// The Sims 4
+// Copyright 2015 Electronic Arts Inc. All rights reserved.
+//
+//--- 010 Editor v5.0.2 Binary Template
+// Resource Type: Binary template for Sky Box Texture Data resource (type 0x71a449c9) Version 2
+//--------------------------------------
+
+typedef struct
+{
+    UINT32 type <format=hex>;
+    UINT32 group <format=hex>;
+    UINT64 instance <format=hex>;
+} ResourceKey <read=ReadResourceKey>;
+
+string ReadResourceKey(ResourceKey& key)
+{
+    string s;
+    SPrintf(s, "%08x:%08x:%016Lx", key.type, key.group, key.instance);
+    return s;
+}
+
+enum SkyBoxTextureType 
+{
+    SkyBox_Texture_Clouds = 0,
+    SkyBox_Texture_Sun = 1,
+    SkyBox_Texture_SunHalo = 2,
+    SkyBox_Texture_Moon = 3,
+    SkyBox_Texture_Stars = 4,
+    SkyBox_Texture_CubeMap = 5,
+    SkyBox_Texture_NumTextures,
+    SkyBox_Texture_None = -1,
+};
+
+typedef struct
+{
+    SkyBoxTextureType type;
+    ResourceKey key;
+    uint32 mStrLen;
+    if (mStrLen>0)
+    {
+        wchar_t texturePath[mStrLen];
+    }
+} SkyBoxTexture <optimize=false>;
+
+uint32 version;
+if(version != 2)
+{
+    Warning("Unknown version detected. Please update the template.");
+    return -1;
+}
+
+uint32 count;
+SkyBoxTexture textures[count];

@@ -1,0 +1,52 @@
+//--------------------------------------
+// The Sims 4
+// Copyright 2016 Electronic Arts Inc. All rights reserved.
+//
+//--- 010 Editor v7.0.2 Binary Template
+// Resource Type: Region Description Resource (0xd65daff9) Version 11
+//--------------------------------------
+
+uint32 version;
+
+// Note: Do not make resources that are at version 10.
+if(version != 9 && version != 11)
+{
+    Warning("Invalid Version.");
+    return -1;
+}
+
+uint32 regionNameKey                <format=hex>;
+uint32 regionDescriptionKey         <format=hex>;
+uint32 simoleonPrice;
+uint32 mDevCategoryFlags            <format=hex>;
+uint64 regionImageFileNameHash      <format=hex>;
+uint64 ambienceFileInstanceId       <format=hex>;
+
+float thumbnailCameraPitch;
+float thumbnailCameraYaw;
+float thumbnailCameraWidth;
+uchar thumbnailTimeOfDayHour;
+uchar thumbnailTimeOfDayMinute;
+
+uint64 regionThumbnailFileNameHash  <format=hex>;
+uint64 mapBackgroundFileNameHash    <format=hex>;
+
+float lightRotationOffset;
+
+uchar isDestinationWorld;
+uchar isPlayerFacing;
+
+uint64 parallaxLayerImageFileNameHash[5] <format=hex>;
+uint64 overlayImageFileNameHash <format=hex>;
+
+if (version > 10)
+{
+    uint64 mapFlashFileNameHash <format=hex>;
+
+    //  This list specifes the premade households to be used as townies
+    uchar householdDescCount;
+    if (householdDescCount > 0)
+    {   
+        uint64 householdDescIds[householdDescCount] <format=hex>;
+    }
+}

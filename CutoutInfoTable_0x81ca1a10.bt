@@ -1,0 +1,59 @@
+//--------------------------------------
+// The Sims 4
+// Copyright 2016 Electronic Arts Inc. All rights reserved.
+//
+//--- 010 Editor v5.0.2 Binary Template
+// Resource Type: Binary template for Cutout Info Table resource (type 0x81ca1a10) Version 3
+//--------------------------------------
+CHAR sig[4];
+if(sig != "MTBL" )
+{
+    Warning("Invalid Signature.");
+    return -1;
+}
+
+UINT32 version;
+if(version != 3)
+{
+    Warning("Unknown version of detected.");
+    return -1;
+}
+
+UINT32 tableSize;
+
+typedef struct
+{
+    UINT64 modelID <format=hex>;
+    UINT64 baseFileNameHash <format=hex>;
+
+    // bits 0-3: Width of cutout in tiles.
+    // bit 4: No Opaque
+    // bit 5: Is Archway
+    // bit 6: Single texture cutout.
+    // bit 7: Diagonal cutout mapping in use (1 texture = sqrt(2) meters).
+    UCHAR widthAndMappingFlags <format=hex>;
+
+    UCHAR minimumWallHeight;
+    UCHAR numberOfLevels;
+    UCHAR unused;
+    FLOAT boundingBoxMin[3];
+    FLOAT boundingBoxMax[3];
+
+    // flags:
+    //  MODELFLAGS_USES_INSTANCED_SHADER            = 1 << 0,
+    //  MODELFLAGS_VERTICAL_SCALING                 = 1 << 1,
+    //  MODELFLAGS_REQUIRES_PROCEDURAL_LIGHTMAP     = 1 << 2,
+    //  MODELFLAGS_USES_TREE_INSTANCE_SHADER        = 1 << 3,
+    //  MODELFLAGS_HORIZONTAL_SCALING               = 1 << 4,
+    //  MODELFLAGS_IS_PORTAL                        = 1 << 5,
+    //  MODELFLAGS_USES_COUNTER_CUTOUT              = 1 << 6,
+    //  MODELFLAGS_SHARE_TERRAIN_LIGHTMAP           = 1 << 7,
+    //  MODELFLAGS_USES_WALL_LIGHTMAP               = 1 << 8,
+    //  MODELFLAGS_USES_CUTOUT                      = 1 << 9,
+    //  MODELFLAGS_INSTANCE_WITH_FULL_TRANSFORM     = 1 << 10,
+    UINT32 flags <format=hex>;
+
+    UINT64 vfxHash;
+} TableEntry;
+
+TableEntry tableEntries[tableSize];

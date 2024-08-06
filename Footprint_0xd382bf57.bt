@@ -1,0 +1,210 @@
+//--------------------------------------
+// The Sims 4
+// Copyright 2015 Electronic Arts Inc. All rights reserved.
+//
+//--- 010 Editor v6.0.2 Binary Template
+// Resource Type: FootprintResource (type 0xd382bf57) Version 12
+//--------------------------------------
+
+LittleEndian();
+
+//
+// ResourceKey
+//
+typedef struct
+{
+    UINT64 instance <format=hex>;
+    UINT32 type <format=hex>;
+    UINT32 group <format=hex>;
+} ResourceKey <read=ReadResourceKey>;
+
+string ReadResourceKey(ResourceKey& key)
+{
+    string s;
+    SPrintf(s, "%08x:%08x:%016Lx", key.type, key.group, key.instance);
+    return s;
+}
+
+//
+//  Context Data
+//
+typedef struct
+{
+    UINT32 position <format=hex>;
+    UINT32 length;
+} ObjectData;
+
+typedef struct
+{
+    UINT32 mContextversion;
+
+    if(mContextversion != 3)
+    {
+        Warning("Context data version 3 expected.");
+        return -1;
+    }
+
+    UINT32 mPublicKeyCount;
+    UINT32 mExternalKeyCount;
+    UINT32 mDelayLoadKeyCount;
+    UINT32 mObjectCount;
+    
+    if(mPublicKeyCount > 0)
+    {
+        ResourceKey mPublicObject[mPublicKeyCount];
+    }
+    if(mObjectCount-mPublicKeyCount > 0)
+    {
+        ResourceKey mPrivateObject[mObjectCount-mPublicKeyCount];
+    }
+    if(mExternalKeyCount > 0)
+    {
+        ResourceKey mExternalReferences[mExternalKeyCount];
+    }
+    if(mDelayLoadKeyCount > 0)
+    {
+        ResourceKey mDelayLoadReferences[mDelayLoadKeyCount];
+    }
+    if(mObjectCount > 0)
+    {
+        ObjectData mObjectData[mObjectCount];
+    }
+} ContextData;
+
+ContextData contextData;
+
+//
+// Footprint Resource
+//
+
+enum FootprintPolyFlags
+{
+    FOOTPRINTPOLYFLAG_PLACEMENT                 = 0x01,
+    FOOTPRINTPOLYFLAG_PATHING                   = 0x02,
+    FOOTPRINTPOLYFLAG_ENABLED                   = 0x04,
+    FOOTPRINTPOLYFLAG_DISCOURAGED               = 0x08,
+    FOOTPRINTPOLYFLAG_LANDINGSTRIP              = 0x10,
+    FOOTPRINTPOLYFLAG_NO_RAYCAST                = 0x20,
+    FOOTPRINTPOLYFLAG_PLACEMENTSLOTTED          = 0x40,
+    FOOTPRINTPOLYFLAG_ENCOURAGED                = 0x80,
+    FOOTPRINTPOLYFLAG_TERRAIN_CUTOUT            = 0x100,
+};
+
+enum IntersectionFlags
+{
+    INTERSECTIONFLAG_NONE                = 0,
+    INTERSECTIONFLAG_WALLS               = (1 << 1),
+    INTERSECTIONFLAG_OBJECTS             = (1 << 2),
+    INTERSECTIONFLAG_SIMS                = (1 << 3),
+    INTERSECTIONFLAG_ROOFS               = (1 << 4),
+    INTERSECTIONFLAG_FENCES              = (1 << 5),
+    INTERSECTIONFLAG_MODULARSTAIRS       = (1 << 6),
+    INTERSECTIONFLAG_OBJECTSOFSAMETYPE   = (1 << 7),
+    INTERSECTIONFLAG_COLUMNS             = (1 << 8),
+    INTERSECTIONFLAG_RESERVEDSPACE       = (1 << 9),
+    INTERSECTIONFLAG_FOUNDATIONS         = (1 << 10),
+    INTERSECTIONFLAG_FENESTRATION_NODE   = (1 << 11),
+    INTERSECTIONFLAG_TRIM                = (1 << 12),
+};
+
+enum SurfaceTypeFlags
+{
+    SURFACETYPEFLAG_TERRAIN     = (1 << 0),
+    SURFACETYPEFLAG_FLOOR       = (1 << 1),
+    SURFACETYPEFLAG_POOL        = (1 << 2),
+    SURFACETYPEFLAG_POND        = (1 << 3),
+    SURFACETYPEFLAG_FENCEPOST   = (1 << 4),
+    SURFACETYPEFLAG_ANYSURFACE  = (1 << 5),
+    SURFACETYPEFLAG_AIR         = (1 << 6),
+    SURFACETYPEFLAG_ROOF        = (1 << 7)
+};
+
+typedef struct
+{
+    UINT32 mNameHash <format=hex>;
+    BYTE mPriority;
+    UINT32 footprintPolyFlags <format=binary>;     // See FootprintPolyFlags
+
+    BYTE pointCount;
+    typedef struct
+    {
+        FLOAT x;
+        FLOAT z;
+    } Point;
+    Point mPointList[pointCount];
+
+    UINT32 mIntersectionType <format=binary>;      // Type of object.  See IntersectionFlags
+    UINT32 mIntersectionFlags <format=binary>;     // Intersections are ignored with objects of these types. See IntersectionFlags
+
+    UINT32 mSurfaceTypeFlags <format=binary>;      // See SurfaceTypeFlags
+    UINT32 mSurfaceAttributeFlags <format=binary>; // Currently Unused
+
+    BYTE deprecated_levelOffset;                   //  Unused, set to 0
+
+    // 3D bounding box min/max
+    FLOAT mMin3d_x;
+    FLOAT mMin3d_z;
+    FLOAT mMax3d_x;
+    FLOAT mMax3d_z;
+    FLOAT mMin3d_y;
+    FLOAT mMax3d_y;
+
+} Polygon;
+
+typedef struct
+{
+    CHAR signature[4];
+    if(signature != "FTPT")
+    {
+        Warning("Invalid footprint resource.");
+        return -1;
+    }
+
+    UINT32 mVersion;
+    if(mVersion != 12)
+    {
+        Warning("Invlaid Version.");
+        return -1;
+    }
+
+    ResourceKey templateKey;
+    if(templateKey.type != 0)
+    {
+        typedef struct
+        {
+            UINT32 nameHash <format=hex>;
+            FLOAT height;
+        } PolygonHeightOverride;
+
+        BYTE numMinOverride;
+        if(numMinOverride)
+            PolygonHeightOverride minOverride[numMinOverride];
+
+        BYTE numMaxOverride;
+        if(numMaxOverride)
+            PolygonHeightOverride maxOverride[numMaxOverride];
+
+        //  Note: If a valid templateKey in supplied, the game will use that resource's
+        //  data to fill in the remainder of the data.  The rest of the data in this 
+        //  FootprintResource will be ignored.  The PolygonHeightOverride data allows
+        //  this resource to override polygon heights in the template.
+    }
+
+    BYTE numObjectPolygons;
+    if(numObjectPolygons)
+        Polygon objectFootprintPolygonList[numObjectPolygons] <optimize=false>;
+
+    BYTE numRoutingPolygons;
+    if(numRoutingPolygons)
+        Polygon routingSlotFootprintPolygonList[numRoutingPolygons] <optimize=false>;
+
+    FLOAT maxHeight;
+    FLOAT minHeight;
+
+} FootprintResource;
+
+local int i;
+for(i=0; i<contextData.mObjectCount; i++)
+{
+    FootprintResource footprint;
+}

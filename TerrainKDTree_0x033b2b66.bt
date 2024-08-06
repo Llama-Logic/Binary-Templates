@@ -1,0 +1,146 @@
+//--------------------------------------
+// The Sims 4
+// Copyright 2017 Electronic Arts Inc.
+//
+//--- 010 Editor v7.0.2 Binary Template
+// Resource Type: Binary template for KD Tree resource (type 0x033b2b66) Version 0x100
+//--------------------------------------
+
+//
+//  Context
+//
+typedef struct
+{
+    UINT64 instance <format=hex>;
+    UINT32 type <format=hex>;
+    UINT32 group <format=hex>;
+} ResourceKeyInstanceFirst <read=ReadResourceKey>;
+
+string ReadResourceKey(ResourceKeyInstanceFirst& key)
+{
+    string s;
+    SPrintf(s, "%08x:%08x:%016Lx", key.type, key.group, key.instance);
+    return s;
+}
+
+typedef struct
+{
+    UINT32 position <format=hex>;
+    UINT32 length;
+} ObjectData;
+
+typedef struct
+{
+    UINT32 mContextversion;
+    UINT32 mPublicKeyCount;
+    UINT32 mExternalKeyCount;
+    UINT32 mDelayLoadKeyCount;
+    UINT32 mObjectCount;
+    
+    if(mPublicKeyCount > 0)
+    {
+        ResourceKeyInstanceFirst mPublicObject[mPublicKeyCount];
+    }
+    if(mObjectCount-mPublicKeyCount > 0)
+    {
+        ResourceKeyInstanceFirst mPrivateObject[mObjectCount-mPublicKeyCount];
+    }
+    if(mExternalKeyCount > 0)
+    {
+        ResourceKeyInstanceFirst mExternalReferences[mExternalKeyCount];
+    }
+    if(mDelayLoadKeyCount > 0)
+    {
+        ResourceKeyInstanceFirst mDelayLoadReferences[mDelayLoadKeyCount];
+    }
+    if(mObjectCount > 0)
+    {
+        ObjectData mObjectData[mObjectCount];
+    }
+} ContextData;
+
+ContextData mContextData;
+
+if( mContextData.mObjectCount != 1 || 
+    mContextData.mPublicObject[0].type!=0x033b2b66 )
+{
+    Warning("Single record of type 0x033b2b66 expected");
+    return -1;
+}
+
+//
+// KD Tree Data
+//
+{
+    FSeek(mContextData.mObjectData[0].position);
+    
+
+    uint32    version <format=hex>;
+    if(version != 0x100)
+    {
+        Warning("Unsupported version");
+        return -1;
+    }
+
+    uint32    nodeCount;
+    uint32    vertCount;
+    uint32    indexCount;
+    float     scaleX;
+    float     scaleY;
+    float     scaleZ;
+    int16     BBoxMinX;
+    int16     BBoxMinY;
+    int16     BBoxMinZ;
+    int16     BBoxMaxX;
+    int16     BBoxMaxY;
+    int16     BBoxMaxZ;
+
+    typedef struct
+    {
+        uint32 splitAxis                    : 2;    // leaf, x, y or z
+    } Type;
+
+    typedef struct
+    {
+        uint32 splitAxis                    : 2;    // leaf, x, y or z
+        uint32 offsetToLeftRightNodePair    : 30;
+    } Branch;
+
+    typedef struct
+    {
+        uint32 splitAxis                    : 2;    // leaf, x, y or z
+        uint32 triangleStart                : 20;
+        uint32 triangleSCount               : 10;
+    } Leaf;
+
+   
+    struct Node
+    {
+        // Look ahead to see Node type.
+        local int64 pos <hidden=true> = FTell();
+        Type type <hidden=true>;
+        FSeek(pos);
+
+        // Read Node
+        if ( type.splitAxis == 0 )
+            Leaf leaf;
+        else
+            Branch branch;
+
+        float splitPoint;
+    };
+    
+    if ( nodeCount > 0 )
+        Node nodes[nodeCount] <optimize=false>;
+    
+    struct Vert
+    {
+        uint16 data[3];
+    };
+    
+    if ( vertCount > 0 )
+        Vert verts[vertCount];
+    
+    if ( indexCount > 0)
+        uint16 indices[indexCount];
+}

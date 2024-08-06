@@ -1,0 +1,437 @@
+//--------------------------------------
+// The Sims 4
+// Copyright 2017 Electronic Arts Inc.
+//
+//--- 010 Editor v5.0 Binary Template
+// Resource Type: PartDataResource (type 0x034aeecb) Version 42
+//--------------------------------------
+
+LittleEndian();
+BitfieldLeftToRight();
+
+// ResourceKey and ResourceKey array
+typedef struct
+{
+    UINT64 instance <format=hex>;
+    UINT32 group <format=hex>;
+    UINT32 type <format=hex>;
+} ResourceKey <read=ReadResourceKey>;
+
+string ReadResourceKey(ResourceKey& key)
+{
+    string s;
+    SPrintf(s, "%08x:%08x:%016Lx", key.type, key.group, key.instance);
+    return s;
+}
+
+typedef struct
+{
+    BYTE count;
+    ResourceKey key[count];
+} ResourceKeyArray <read=ReadResourceKeyArray>;
+
+string ReadResourceKeyArray(ResourceKeyArray& keyArray)
+{
+    if(keyArray.count == 1)
+        return ReadResourceKey(keyArray.key[0]);
+    else
+    {
+        string s;
+        SPrintf(s, "%d keys", keyArray.count);
+        return s;
+    }
+}
+
+string ReadIndexedKey(BYTE& index)
+{
+    string s;
+    if(keyTable.key[index].type == 0)
+    {
+        SPrintf(s, "[%d]: none", index);
+    }
+    else
+    {
+        SPrintf(s, "[%d]: %08x:%08x:%016Lx", index, keyTable.key[index].type, keyTable.key[index].group, keyTable.key[index].instance);
+    }
+    return s;
+}
+
+// Managed string
+typedef struct
+{
+    // The size is varlength value. Name strings are short so 1-2 bytes should be enough
+    local int size;
+    UBYTE sizeLow;
+    size = sizeLow;
+    if(sizeLow > 127)
+    {
+        UBYTE sizeHigh;
+        size = (sizeHigh<<7)|(sizeLow&0x7f);
+    }
+
+    local int isLittleEndian = IsLittleEndian();
+    BigEndian();
+    wchar_t text[size/2];
+    if(isLittleEndian)
+        LittleEndian();
+} ManagedString <read=ReadManagedString>;
+
+wstring ReadManagedString(ManagedString& s)
+{
+    return s.text;
+}
+
+// Other helpers
+typedef struct
+{
+    UINT16 category;
+    UINT16 tagValue;
+} Tag;
+
+typedef struct
+{
+    UINT32 tagCount;
+    Tag tags[tagCount];
+} TagMultimap;
+
+typedef struct
+{
+    UINT16 category;
+    UINT32 tagValue;
+} Tag32;
+
+typedef struct
+{
+    UINT32 tagCount;
+    Tag32 tags[tagCount];
+} TagMultimap32;
+
+
+typedef struct
+{
+// SwatchColorSet::ReadFromStream
+    BYTE usedColorCount;
+    if (usedColorCount!=0)
+    {
+        UINT32 rawData[usedColorCount];
+    }
+} SwatchColorSet <read=ReadSwatchColorSet>;
+
+string ReadSwatchColorSet(SwatchColorSet& sw)
+{
+    string s;
+    SPrintf(s, "%d color(s)", sw.usedColorCount);
+    return s;
+}
+
+typedef struct
+{
+    INT32 sorting;
+    INT32 specLevel;
+    INT32 castShadow;
+} LODAsset;
+
+typedef struct
+{
+    BYTE level;
+    UINT32 unused;
+    BYTE numAssets;
+    LODAsset assets[numAssets];
+
+    BYTE numLodKeys;
+    BYTE lodKey[numLodKeys] <read=ReadIndexedKey>;
+
+} LOD <read=ReadLOD>;
+
+string ReadLOD(LOD& lod)
+{
+    string s;
+    SPrintf(s, "LOD %d", lod.level);
+    return s;
+}
+
+// Presets support, not used in Sims4
+typedef enum<int> eType
+{
+    TYPE_UINT32 = 1,
+    TYPE_FLOAT = 2,
+    TYPE_RESKEY = 3,
+    TYPE_REF = 4
+} Type;
+
+typedef struct
+{
+    UINT32 paramNameId;
+    BYTE paramType;
+    switch(paramType)
+    {
+    case TYPE_UINT32:
+        UINT32 val;
+        break;
+    case TYPE_FLOAT:
+        FLOAT val;
+        break;
+    case TYPE_RESKEY:
+        ResourceKey val;
+        break;
+    case TYPE_REF:
+        UINT32 val;
+        break;
+    }
+} PresetParam;
+
+typedef struct
+{
+    UINT64 mComplateId;
+    BYTE numParams;
+    PresetParam mParams[numParams] <optimize=false>;
+} Preset;
+
+// PartDataResource::Load
+
+UINT32 version;
+if(version < 26 || version > 42)  // Base Game shipped with version 26
+{
+    Warning("Unknown version of PartDataResource detected. Please update the template");
+    return -1;
+}
+
+UINT32 dataSize;
+
+// Jump to the key table, read it, and return
+local int64 curPos = FTell();
+FSkip(dataSize);
+ResourceKeyArray keyTable;
+FSeek(curPos);
+
+UINT32 numPresets;
+if(numPresets)
+{
+    Preset mPresets[numPresets] <optimize=false>;
+}
+
+ManagedString mName;
+
+FLOAT mDisplayIndex;
+
+UINT16 mSecondaryDisplayIndex;
+UINT32 mPrototypeId <format=hex>;
+
+UINT32 mAuralMaterialHash <format=hex>;
+
+typedef struct
+{
+    BYTE RestrictOppositeGender : 1;    // Do not allow this part on opposite gender
+    BYTE AllowForLiveRandom : 1;        // Avaliable for random in live mode?
+    BYTE ShowInCasDemo : 1;
+    BYTE ShowInSimInfoPanel : 1;
+    BYTE ShowInUI : 1;
+    BYTE AllowForCASRandom : 1;          // Avaliable for random in CAS?
+    BYTE DefaultThumbnailPart : 1;
+    BYTE not_used : 1;
+} ParmFlags1;
+
+typedef struct
+{
+    BYTE not_used : 5;
+    BYTE DefaultForBodyTypeFemale : 1;
+    BYTE DefaultForBodyTypeMale : 1;
+    BYTE RestrictOppositeFrame : 1;     // Part allowed only on sims with a body frame gender that matches this part's gender flags
+} ParmFlags2;
+
+ParmFlags1 mPartFlags1;
+if (version >= 39)
+{
+    ParmFlags2 mPartFlags2;
+}
+
+UINT64 mExcludePartFlags1 <format=hex>;
+if (version >= 41)
+{
+    UINT64 mExcludePartFlags2 <format=hex>;
+}
+
+if (version >= 36)
+{
+    UINT64 mExcludeModifierRegionFlags <format=hex>;
+}
+else
+{
+    UINT32 mExcludeModifierRegionFlags <format=hex>;
+}
+
+if (version >= 37)
+{
+    TagMultimap32 mTags;
+}
+else
+{
+    TagMultimap mTags;
+}
+
+UINT32 mDepricated;
+UINT32 mPartTitleKey <format=hex>;
+UINT32 mPartDescKey <format=hex>;
+BYTE mbUniqueTextureSpace;
+INT32 mBodyType;
+
+if (version >= 35)
+{
+    INT32 mBodySubType;
+}
+else
+{
+    INT32 unused;
+}
+
+typedef struct
+{
+    UINT32 reserved_2     : 18;  // Set to 0
+    UINT32 Gender_Female  : 1;
+    UINT32 Gender_Male    : 1;
+    UINT32 reserved_1     : 5;  // Set to 0
+    UINT32 Age_Elder      : 1;
+    UINT32 Age_Adult      : 1;
+    UINT32 Age_YoungAdult : 1;
+    UINT32 Age_Teen       : 1;
+    UINT32 Age_Child      : 1;
+    UINT32 reserved_0     : 1;  // Set to 0
+    UINT32 Age_Baby       : 1;
+
+} AgeGenderFlags;
+
+AgeGenderFlags mAgeGender <format=hex>;
+
+
+if(version >= 32)
+{
+    UINT32 reserved_set_to_1; // Set to 1
+}
+
+if(version >= 34)
+{
+    typedef struct
+    {
+        BYTE mReserved_set_to_0 : 7;
+        BYTE hide_pack_icon     : 1;
+    } PackFlags;
+
+    INT16       mPackID <comment="The pack this item belongs to, will not appear in catalog if this pack is not owned">;
+    PackFlags   mPackFlags;
+    BYTE        mReserved_set_to_0[9];   // Must be 0
+}
+else
+{
+    BYTE unused2;
+    if(unused2 > 0)
+        BYTE unused3;
+}
+
+SwatchColorSet mSwatchColors;
+BYTE mBuffResKey <read=ReadIndexedKey>;
+BYTE mVariantThumbKey <read=ReadIndexedKey>;
+
+if(version >= 28)
+{
+    UINT64 mVoiceEffectHash <format=hex>;
+}
+
+if(version >= 30)
+{
+    BYTE mUsedMaterialCount;
+
+    if (mUsedMaterialCount>0)
+    {
+        if (mUsedMaterialCount!=3)
+        {
+            Warning("Unexpected number of Aural Material Set Hashes.");
+        }
+        UINT32 mAuralMaterialSet_upperBodyHash <format=hex>;
+        UINT32 mAuralMaterialSet_lowerBodyHash <format=hex>;
+        UINT32 mAuralMaterialSet_shoesHash <format=hex>;
+    }
+}
+
+typedef struct
+{
+    UINT32 reserved : 30;
+    UINT32 alien    : 1;
+    UINT32 human    : 1;
+} OccultBitField;
+
+if(version >= 31)
+{
+    OccultBitField mHideForOccultFlags;
+}
+
+if(version >= 38)
+{
+    // If the current part is not compatible with the Sim due to frame/gender
+    // restrictions, use this part instead. Maxis convention is to use this
+    // to specify the opposite gender version of the part. Set to 0 for none.
+    UINT64 mOppositeGenderPart <format=hex>;
+}
+
+if(version >= 39)
+{
+    // If the current part is not compatible with the Sim due to frame/gender
+    // restrictions, and there is no mOppositeGenderPart specified, use this part.
+    // Maxis convention is to use this to specify a replacement part which is not
+    // necessarily the opposite gendered version of the part. Set to 0 for none.
+    UINT64 mFallbackPart <format=hex>;
+}
+
+BYTE mNakedKey <read=ReadIndexedKey>;
+BYTE mParentKey <read=ReadIndexedKey>;
+INT32 mSortLayer;
+
+BYTE numLODs;
+if ( numLODs > 0 )
+{
+    LOD mLODs[numLODs] <optimize=false>;
+}
+
+BYTE numSlotKeys;
+BYTE mSlotKey[numSlotKeys] <read=ReadIndexedKey>;
+
+BYTE mDiffuseKey <read=ReadIndexedKey>;
+BYTE mShadowKey <read=ReadIndexedKey>;
+BYTE mCompositionMethod;
+BYTE mRegionMapKey <read=ReadIndexedKey>;
+
+typedef struct
+{
+    BYTE region;
+    FLOAT layer;
+} Override;
+
+BYTE nOverrides;
+if(nOverrides > 0)
+{
+    Override mRegionLayerOverrides[nOverrides];
+}
+
+BYTE mNormalMapKey <read=ReadIndexedKey>;
+BYTE mSpecularMapKey <read=ReadIndexedKey>;
+
+if(version >= 27)
+{
+    // This field allows a part to specify that it uses the normal uv map space of another CAS part. 
+    // So for example a helmet can use the space of hair because the hair has a higher resolution map 
+    // and cannot be seen when the helmet is present. 
+    // If 0 or same as mBodyType then has no impact.
+    INT32 mNormalUVBodyType;
+}
+
+if(version >= 29)
+{
+    // Emission map key (e.g. alien glow)
+    BYTE mEmissionMapKey <read=ReadIndexedKey>;
+}
+
+
+
+if(version >= 42)
+{
+    BYTE mBasePositionDeformerKey <read=ReadIndexedKey>;
+}

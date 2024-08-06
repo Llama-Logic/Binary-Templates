@@ -1,0 +1,54 @@
+//--------------------------------------
+// The Sims 4
+// Copyright 2015 Electronic Arts Inc. All rights reserved.
+//
+//--- 010 Editor v5.0.2 Binary Template
+// Resource Type: Skin Tone Resource (0x0354796a) Version 6
+//--------------------------------------
+
+uint32 version;
+if(version != 6)
+{
+    Warning("Invlaid Version.");
+    return -1;
+}
+
+uint64 textureInstance <format=hex>;
+
+typedef struct
+{
+    uint32 ageGenderFlags;
+    uint64 textureInstance <format=hex>;
+} overlaytexture;
+
+uint32 overlayTextureCount;
+
+if ( overlayTextureCount > 0 )
+{
+    overlaytexture overlaytextures[overlayTextureCount];
+}
+
+uint32 colorize;    // Hue and saturation values ((hue << 16) + saturation).
+uint32 opacity2;    // Opacity value used for the second skintone overlay operation during skintone compositing (0 - 100).
+
+typedef struct
+{
+    uint16 category;
+    uint16 value;
+} tag;
+
+uint32 tagCount;
+if ( tagCount > 0 )
+    tag tags[tagCount];
+
+
+float makeupopacity;    // Opacity value used when blending makeup (0 - 1).
+
+char numSwatchColors;
+if ( numSwatchColors > 0 )
+    uint32 swatchColors[numSwatchColors] <format=hex>;
+
+float displayIndex;     // Determines the order in which the skintones appear in the game UI.
+
+float mMakeupOpacity2;  // Second opacity value used when blending some specific makeups makeup (0 - 1).
+

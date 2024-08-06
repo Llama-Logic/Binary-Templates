@@ -1,0 +1,232 @@
+//--------------------------------------
+// The Sims 4
+// Copyright 2014 Electronic Arts Inc. All rights reserved.
+//
+//--- 010 Editor v5.0 Script File
+// Test script that illustrates how to extract image data from a DMap.
+// Use in conjunction with binary template file DMapResource_0xdb43e069.bt
+// to export DMAP resources as a BMP
+//--------------------------------------
+
+RequiresFile();
+uint32 width = mMaxCol - mMinCol + 1;
+uint32 height = mMaxRow - mMinRow + 1;
+int fin = GetFileNum(); // Input is the current open file
+
+
+uchar pixelArraySkinTight[width*height*3];
+uchar pixelArrayRobe[width*height*3];
+int i;
+int destIndexRobe = 0;
+int destSkinTight = 0;
+
+int numpixelsdecoded;
+int rleindex;
+int j,runlen,pixelsize;
+uint32 step, idx, pixelPosX, dataPos, runLength, pixelStart;
+
+// Selects if we should extract RLE data directly or use the index tables to extract. 
+// Both methods should produce identical results.
+int perPixedDecoding = 1;
+
+
+for( i = 0; i < height; i++ )
+{
+    if (mScanLine[i].mRobeChannel ==ROBECHANNEL_PRESENT )
+    {
+        pixelsize = 6;
+    }
+    else
+    {
+        pixelsize = 3;
+    }
+
+    if (mScanLine[i].mbIsCompressed == 0 )
+    {
+        // Not compressed, just copy over
+        for (j=0;j<width;j++)
+        {
+            pixelArraySkinTight[destSkinTight++]=mScanLine[i].mUncompressedPixels[(j*pixelsize)+0];
+            pixelArraySkinTight[destSkinTight++]=mScanLine[i].mUncompressedPixels[(j*pixelsize)+1];
+            pixelArraySkinTight[destSkinTight++]=mScanLine[i].mUncompressedPixels[(j*pixelsize)+2];
+            switch (mScanLine[i].mRobeChannel)
+            {
+                case 0: //ROBECHANNEL_PRESENT
+                    pixelArrayRobe[destIndexRobe++]=mScanLine[i].mUncompressedPixels[(j*pixelsize)+3];
+                    pixelArrayRobe[destIndexRobe++]=mScanLine[i].mUncompressedPixels[(j*pixelsize)+4];
+                    pixelArrayRobe[destIndexRobe++]=mScanLine[i].mUncompressedPixels[(j*pixelsize)+5];
+                    break;
+                case 1: //ROBECHANNEL_DROPPED
+                    pixelArrayRobe[destIndexRobe++]=0;
+                    pixelArrayRobe[destIndexRobe++]=0;
+                    pixelArrayRobe[destIndexRobe++]=0;
+                    break;
+                case 2: //ROBECHANNEL_ISCOPY
+                    pixelArrayRobe[destIndexRobe++]=mScanLine[i].mUncompressedPixels[(j*pixelsize)+0];
+                    pixelArrayRobe[destIndexRobe++]=mScanLine[i].mUncompressedPixels[(j*pixelsize)+1];
+                    pixelArrayRobe[destIndexRobe++]=mScanLine[i].mUncompressedPixels[(j*pixelsize)+2];
+                    break;
+            }
+        }
+    }
+    else
+    {
+        if ( perPixedDecoding == 1 )
+        {
+            // Look up each pixel using index tables
+            for (j=0;j<width;j++)
+            {
+                // To get pointer to the RLE encoded data we need first find 
+                // proper RLE run in the buffer. Use index for this:
+
+                // Cache increment for indexing in pixel space?
+                step = 1 + width / (mScanLine[i].numIndexes - 1); // 1 entry was added for the remainder of the division
+            
+                // Find index into the positions and data table:
+                idx = j / step;
+            
+                // This is location of the run first covering this interval.
+                pixelPosX = mScanLine[i].mPixelPosIndexes[idx];
+            
+                // Position of the RLE data of the place where need to unwind to the pixel. 
+                dataPos = mScanLine[i].mDataPosIndexes[idx] * (pixelsize + 1); // +1 for run length byte
+            
+                // This is run length for the RLE entry found at 
+                runLength = mScanLine[i].mRLEArrayOfPixels[dataPos];
+            
+                // Loop forward unwinding RLE data from the found indexed position. 
+                // Continue until the pixel position in question is not covered 
+                // by the current run interval. By design the loop should execute 
+                // only few times until we find the value we are looking for.
+                while (j >= pixelPosX + runLength)
+                {
+                    pixelPosX += runLength;
+                    dataPos += (1 + pixelsize); // 1 for run length, +pixelSize for the run value
+            
+                    runLength = mScanLine[i].mRLEArrayOfPixels[dataPos];
+                 }
+            
+                // After breaking out of the cycle, we have the current run length interval
+                // covering the pixel position x we are interested in. So just return the pointer
+                // to the pixel data we were after:
+                pixelStart = dataPos + 1;
+            
+                //
+                pixelArraySkinTight[destSkinTight++]=mScanLine[i].mRLEArrayOfPixels[pixelStart+0];
+                pixelArraySkinTight[destSkinTight++]=mScanLine[i].mRLEArrayOfPixels[pixelStart+1];
+                pixelArraySkinTight[destSkinTight++]=mScanLine[i].mRLEArrayOfPixels[pixelStart+2];
+                switch (mScanLine[i].mRobeChannel)
+                {
+                    case 0: //ROBECHANNEL_PRESENT
+                        pixelArrayRobe[destIndexRobe++]=mScanLine[i].mRLEArrayOfPixels[pixelStart+3];
+                        pixelArrayRobe[destIndexRobe++]=mScanLine[i].mRLEArrayOfPixels[pixelStart+4];
+                        pixelArrayRobe[destIndexRobe++]=mScanLine[i].mRLEArrayOfPixels[pixelStart+5];
+                        break;
+                    case 1: //ROBECHANNEL_DROPPED
+                        pixelArrayRobe[destIndexRobe++]=0;
+                        pixelArrayRobe[destIndexRobe++]=0;
+                        pixelArrayRobe[destIndexRobe++]=0;
+                        break;
+                    case 2: //ROBECHANNEL_ISCOPY
+                        pixelArrayRobe[destIndexRobe++]=mScanLine[i].mRLEArrayOfPixels[pixelStart+0];
+                        pixelArrayRobe[destIndexRobe++]=mScanLine[i].mRLEArrayOfPixels[pixelStart+1];
+                        pixelArrayRobe[destIndexRobe++]=mScanLine[i].mRLEArrayOfPixels[pixelStart+2];
+                        break;
+                }
+            }
+        }
+        else
+        {
+            // Unpack the RLE Scanline without using index tables
+            numpixelsdecoded = 0;
+            rleindex=0;
+
+            while (numpixelsdecoded<width)
+            {
+                runlen=mScanLine[i].mRLEArrayOfPixels[rleindex++];
+                for (j=0;j<runlen;j++)
+                {
+                    pixelArraySkinTight[destSkinTight++]=mScanLine[i].mRLEArrayOfPixels[rleindex+0];
+                    pixelArraySkinTight[destSkinTight++]=mScanLine[i].mRLEArrayOfPixels[rleindex+1];
+                    pixelArraySkinTight[destSkinTight++]=mScanLine[i].mRLEArrayOfPixels[rleindex+2];
+    
+                    switch (mScanLine[i].mRobeChannel)
+                    {
+                        case 0: //ROBECHANNEL_PRESENT
+                            pixelArrayRobe[destIndexRobe++]=mScanLine[i].mRLEArrayOfPixels[rleindex+3];
+                            pixelArrayRobe[destIndexRobe++]=mScanLine[i].mRLEArrayOfPixels[rleindex+4];
+                            pixelArrayRobe[destIndexRobe++]=mScanLine[i].mRLEArrayOfPixels[rleindex+5];
+                            break;
+                        case 1: //ROBECHANNEL_DROPPED
+                            pixelArrayRobe[destIndexRobe++]=0;
+                            pixelArrayRobe[destIndexRobe++]=0;
+                            pixelArrayRobe[destIndexRobe++]=0;
+                            break;
+                        case 2: //ROBECHANNEL_ISCOPY
+                            pixelArrayRobe[destIndexRobe++]=mScanLine[i].mRLEArrayOfPixels[rleindex+0];
+                            pixelArrayRobe[destIndexRobe++]=mScanLine[i].mRLEArrayOfPixels[rleindex+1];
+                            pixelArrayRobe[destIndexRobe++]=mScanLine[i].mRLEArrayOfPixels[rleindex+2];
+                            break;
+                    }
+                    numpixelsdecoded++;
+                }
+                rleindex+=pixelsize;
+            }
+        }
+    }
+}
+
+
+int writeRobe = 0;  // Select if we want to write the robe or skin tight data
+
+// Write BMP Header
+int fout = FileNew("Hex");
+int64 destpos=0;
+int64 sourcepos=0;
+WriteUShort(destpos,0x4D42);   destpos+=2;
+WriteInt(destpos,0);           destpos+=4; // Size : Set to 0 since BMP will be uncompressed
+WriteUShort(destpos,0);        destpos+=2; // Reserved
+WriteUShort(destpos,0);        destpos+=2; // Reserved
+WriteInt(destpos,54);          destpos+=4; // BMP Offset: Always 54
+WriteInt(destpos,40);          destpos+=4; // Header size: Always 40
+WriteInt(destpos,width);       destpos+=4; // Width
+WriteInt(destpos,height);      destpos+=4; // Height
+WriteUShort(destpos,1);        destpos+=2; // Planes: Always 1
+WriteUShort(destpos,24);       destpos+=2; // BPP: 24 Bits per pixel
+WriteInt(destpos,0);           destpos+=4; // Compression
+WriteInt(destpos,0);           destpos+=4; // Size: Set to 0 since uncompressed
+WriteInt(destpos,0);           destpos+=4; // HorzResolution
+WriteInt(destpos,0);           destpos+=4; // VertResolution
+WriteInt(destpos,0);           destpos+=4; // ColorsUsed
+WriteInt(destpos,0);           destpos+=4; // ColorsImportant
+
+int k,l;
+
+int bytesPerLine = (int)Ceil( width * 24.0 / 8.0 );
+int padding      = 4 - (bytesPerLine % 4);
+if( padding == 4 )
+    padding = 0;
+
+for( k = 0 ; k < height; k++ )
+{
+    for( l = 0 ; l < width*3; l++ )
+    {
+        if ( writeRobe == 0 )
+        {
+            WriteByte(destpos,pixelArraySkinTight[sourcepos]);
+        }
+        else
+        {
+            WriteByte(destpos,pixelArrayRobe[sourcepos]);
+        }
+        destpos++;
+        sourcepos++;
+    }
+
+    for( l = 0 ; l < padding; l++ )
+    {
+        WriteByte(destpos,0);
+        destpos++;
+    }
+}
+

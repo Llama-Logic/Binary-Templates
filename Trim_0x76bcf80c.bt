@@ -1,0 +1,72 @@
+//--------------------------------------
+// The Sims 4
+// Copyright 2016 Electronic Arts Inc. All rights reserved.
+//
+//--- 010 Editor v6.0.2 Binary Template
+// Resource Type: Trim Profile (type 0x76bcf80c) Version 4.
+//--------------------------------------
+
+typedef struct
+{
+    UINT64 instance <format=hex>;
+    UINT32 type <format=hex>;
+    UINT32 group <format=hex>;
+} ResourceKey <read=ReadResourceKey>;
+
+string ReadResourceKey(ResourceKey& key)
+{
+    string s;
+    SPrintf(s, "%08x:%08x:%016Lx", key.type, key.group, key.instance);
+    return s;
+}
+
+CHAR sig[4];
+if(sig != "TRIM" )
+{
+    Warning("Invalid Signature.");
+    return -1;
+}
+
+UINT32 version;
+if (version < 3 || version > 4 ) // Base game shipped with version 3
+{
+    Warning("Unrecognized Version.");
+    return -1;
+}
+
+struct Point3
+{
+    float x,y,v;
+};
+
+struct Point4
+{
+    float x,y,v;
+    // The UV scheme for a profile vertex is decided by that point's mappingMode and the material.
+    float mappingMode;
+};
+
+UINT32 numPoints;
+
+if (numPoints > 0)
+{
+    if (version == 3)
+    {
+        Point3 points[numPoints];
+    }
+    else
+    {
+        Point4 points[numPoints];
+    }
+}
+
+ResourceKey materialSetKey;
+
+UCHAR bHasFootprint;
+
+if ( bHasFootprint != 0 )
+{
+    float thickness;
+    float minHeight;
+    float maxHeight;
+}

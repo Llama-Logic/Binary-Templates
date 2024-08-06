@@ -1,0 +1,103 @@
+//--------------------------------------
+// The Sims 4
+// Copyright 2018 Electronic Arts Inc.
+//
+//--- 010 Editor v7.0.2 Binary Template
+// Resource Type: Binary template for World Object Data (type 0xfcb1a1e4) version 8
+
+//
+// ResourceKey and ResourceKey array
+//
+typedef struct
+{
+    UINT32 type <format=hex>;
+    UINT32 group <format=hex>;
+    UINT64 instance <format=hex>;
+} ResourceKey <read=ReadResourceKey>;
+
+string ReadResourceKey(ResourceKey& key)
+{
+    string s;
+    SPrintf(s, "%08x:%08x:%016Lx", key.type, key.group, key.instance);
+    return s;
+} 
+
+//
+UINT32 version;
+if(version < 7 || version > 8 )  
+{
+  Warning("Unknown version [%d].", version);
+  return -1;
+}
+
+UINT32 numlots;
+
+typedef struct
+{
+    ResourceKey footprintKey;
+    float posx,posy,posz;
+    float qx,qy,qz,qw;
+    float scale;
+    UINT64 objDefGuid <format=hex>;
+    UINT64 objectId <format=hex>; 
+
+    //  Low end machine specific LOD setting:
+    //       0 = Use low end machine LOD range
+    //      -1 = No LOD difference on low end machines
+    //      -2 = Object is hidden on low end machines
+    CHAR minSpecLOD;
+
+    UINT64 parentID <format=hex>;
+    UINT32 slotHash;
+
+    if (version>=8)
+    {
+        char accumulatesSnow;
+    }
+
+} Object <optimize=false>;
+
+typedef struct
+{
+    ResourceKey footprintKey;
+    float posx,posy,posz;
+    float qx,qy,qz,qw;
+    float scale;
+    UINT64 objDefGuid <format=hex>;
+} Locator <optimize=false>;
+
+typedef struct
+{
+    UINT32 lotID <format=hex>;
+    ResourceKey footprintKey;
+    UINT32 numObjects;
+    if (numObjects>0)
+    {
+        Object objects[numObjects];
+    }
+
+    UINT32 numObjectsNoScript;
+    if (numObjectsNoScript>0)
+    {
+        Object objectsNoScript[numObjectsNoScript];
+    }
+
+    UINT32 numLocators;
+    if (numLocators>0)
+    {
+        Locator locators[numLocators];
+    }
+
+} Lot <optimize=false,read=ReadLot>;
+
+string ReadLot(Lot& l)
+{
+    string s;
+    SPrintf(s, "[Scripted objects %d][No-script objects %d][Total Objects %d]", l.numObjects, l.numObjectsNoScript, l.numObjects + l.numObjectsNoScript);
+    return s;
+}
+
+if ( numlots > 0 )
+{
+    Lot Lots[numlots];
+}

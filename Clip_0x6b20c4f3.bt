@@ -1,0 +1,451 @@
+//--------------------------------------
+// The Sims 4
+// Copyright 2016 Electronic Arts Inc. All rights reserved.
+//
+//--- 010 Editor v6.0.2 Binary Template
+// Resource Type: Binary template for Clip resource (type 0x6b20c4f3) Version 14
+//--------------------------------------
+
+typedef struct
+{
+    float x;
+    float y;
+    float z;
+
+} Vector3;
+
+typedef struct
+{
+    float x;
+    float y;
+    float z;
+    float w;
+
+} Quaternion;
+
+typedef struct
+{
+    uint32 length;
+    char value[length];
+
+} IO_STRING <read=ReadIO_STRING>;
+
+string ReadIO_STRING( IO_STRING &value )
+{
+    return value.value;
+}
+
+typedef struct
+{
+    uint16 chainIdx;
+    uint16 slotIdx;
+    IO_STRING targetObjectNamespace;
+    IO_STRING targetJointName;
+
+} SlotAssignment;
+
+typedef struct
+{
+    uint32 slotAssignmentCount;
+    SlotAssignment slotAssignments[slotAssignmentCount] <optimize=false>;
+    
+} IkConfiguration;
+
+typedef struct
+{
+    typedef enum <uint32> { 
+        INVALID  = 0,
+        PARENT,
+        UNPARENT,
+        SOUND,
+        SCRIPT,
+        EFFECT,
+        VISIBILITY,
+        DEPRECATED_6,
+        CREATE_PROP,
+        DESTROY_PROP,
+        STOP_EFFECT,
+        BLOCK_TRANSITION,
+        SNAP,
+        REACTION,
+        DOUBLE_MODIFIER_SOUND,
+        DSP_INTERVAL,
+        MATERIAL_STATE,
+        FOCUS_COMPATIBILITY,
+        SUPPRESS_LIP_SYNC,
+        CENSOR,
+        SIMULATION_SOUND_START,
+        SIMULATION_SOUND_STOP,
+        ENABLE_FACIAL_OVERLAY,
+        FADE_OBJECT,
+        DISABLE_OBJECT_HIGHLIGHT,
+        THIGH_TARGET_OFFSET
+    } ClipEventType;
+
+    ClipEventType type;
+    uint32 size;
+    byte data[size];
+    
+} ClipEvent;
+
+typedef struct
+{
+    uint32 length;
+    ClipEvent events[length] <optimize=false>;
+
+} ClipEventList;
+
+struct F1Palette(uint32 size)
+{
+    float palette[size];
+};
+
+typedef enum <ubyte> { 
+    ChannelType_Unknown  = 0,
+    F1,
+    F2,
+    F3,
+    F4,
+    
+    F1_Normalized,
+    F2_Normalized,
+    F3_Normalized,
+    F4_Normalized,
+    
+    F1_Zero,
+    F2_Zero,
+    F3_Zero,
+    F4_Zero,
+    
+    F1_One,
+    F2_One,
+    F3_One,
+    F4_One,
+    
+    F4_QuaternionIdentity,
+    
+    F3_HighPrecisionNormalized,
+    F4_HighPrecisionNormalized_Quaternion,
+    F4_SuperHighPrecision_Quaternion,
+    F3_HighPrecisionNormalized_Quaternion,// channel type does not support offset or scale
+
+} ChannelType;
+
+uint GetWidthForChannelType(ChannelType t)
+{
+    switch (t)
+    {
+    case F1_Normalized:
+    case F2_Normalized:
+    case F3_Normalized:
+    case F4_Normalized:
+        return 1;
+
+    case F3_HighPrecisionNormalized:
+    case F4_HighPrecisionNormalized_Quaternion:    
+    case F3_HighPrecisionNormalized_Quaternion:
+        return 10;
+
+    case F1:
+    case F2:
+    case F3:
+    case F4:
+    case F4_SuperHighPrecision_Quaternion:
+        return 2;    
+
+    case F1_Zero:
+    case F2_Zero:
+    case F3_Zero:
+    case F4_Zero:    
+    case F1_One:
+    case F2_One:
+    case F3_One:
+    case F4_One:    
+    case F4_QuaternionIdentity:
+        return 0;
+    }
+}
+
+uint GetCountForChannelType(ChannelType t)
+{
+    switch (t)
+    {
+    case F1:
+    case F1_Normalized:
+        return 1;
+        break;
+
+    case F2:
+    case F2_Normalized:
+        return 2;
+        break;
+
+    case F3:
+    case F3_Normalized:
+        return 3;
+        break;
+
+    case F4:
+    case F4_Normalized:
+    case F4_SuperHighPrecision_Quaternion:
+    case F4_HighPrecisionNormalized_Quaternion:    
+    case F3_HighPrecisionNormalized_Quaternion:
+        return 4;
+        break;
+
+    case F3_HighPrecisionNormalized:
+        return 3;
+        break;
+
+    case F1_Zero:
+    case F2_Zero:
+    case F3_Zero:
+    case F4_Zero:    
+    case F1_One:
+    case F2_One:
+    case F3_One:
+    case F4_One:    
+    case F4_QuaternionIdentity:
+        return 0;
+        break;
+    }
+
+    return 0;
+}
+
+struct S3Channel
+{
+
+    typedef enum <ubyte> { 
+        SubTarget_Unknown  = 0,
+        Translation,
+        Orientation,
+        Scale,
+        
+        Translation_X,  // UNSUPPORTED
+        Translation_Y,  // UNSUPPORTED
+        Translation_Z,  // UNSUPPORTED
+        
+        Orientation_X,  // UNSUPPORTED
+        Orientation_Y,  // UNSUPPORTED
+        Orientation_Z,  // UNSUPPORTED
+        Orientation_W,  // UNSUPPORTED
+        
+        Scale_X,  // UNSUPPORTED
+        Scale_Y,  // UNSUPPORTED
+        Scale_Z,  // UNSUPPORTED
+        
+        IK_TargetWeight_World,
+        IK_TargetWeight_1,
+        IK_TargetWeight_2,
+        IK_TargetWeight_3,
+        IK_TargetWeight_4,
+        IK_TargetWeight_5,
+        IK_TargetWeight_6,
+        IK_TargetWeight_7,
+        IK_TargetWeight_8,
+        IK_TargetWeight_9,
+        IK_TargetWeight_10,
+        
+        IK_TargetOffset_Translation_World,
+        IK_TargetOffset_Orientation_World,
+        IK_TargetOffset_Translation_1,
+        IK_TargetOffset_Orientation_1,
+        IK_TargetOffset_Translation_2,
+        IK_TargetOffset_Orientation_2,
+        IK_TargetOffset_Translation_3,
+        IK_TargetOffset_Orientation_3,
+        IK_TargetOffset_Translation_4,
+        IK_TargetOffset_Orientation_4,
+        IK_TargetOffset_Translation_5,
+        IK_TargetOffset_Orientation_5,
+        IK_TargetOffset_Translation_6,
+        IK_TargetOffset_Orientation_6,
+        IK_TargetOffset_Translation_7,
+        IK_TargetOffset_Orientation_7,
+        IK_TargetOffset_Translation_8,
+        IK_TargetOffset_Orientation_8,
+        IK_TargetOffset_Translation_9,
+        IK_TargetOffset_Orientation_9,
+        IK_TargetOffset_Translation_10,
+        IK_TargetOffset_Orientation_10,
+
+    } SubTargetType;
+
+    uint32  dataOffset;
+    uint32  target;
+    float   offset;
+    float   scale;
+    uint16  numFrames;
+
+
+    ChannelType     channelType;
+    SubTargetType   channelSubTarget;
+
+    // Load the frame data
+    if (numFrames > 0)
+    {
+        local uint width = GetWidthForChannelType(channelType);
+        local uint count = GetCountForChannelType(channelType);
+    
+        if (width > 0)
+        {
+            struct FrameContents
+            {
+                local uint pad = 0;
+        
+                switch (width)
+                {
+                case 1:
+                    ubyte indices[count];
+                    pad = 4 - count;
+                    break;
+        
+                case 2:
+                    uint16 indices[count];
+                    if (count % 2 != 0)
+                        pad = 2;
+                    break;
+    
+                case 10:
+                    struct Indices3x10
+                    {
+                        uint idx_0 : 10;
+                        uint idx_1 : 10;
+                        uint idx_2 : 10;
+                    };
+                    union Data
+                    {
+                        uint32 packed_indices;
+                        Indices3x10 indices;                        
+                    };
+                    Data data;
+                    break;
+        
+                default:
+                    break;
+                }
+               
+                if (pad > 0)
+                    ubyte padding[pad];
+            };
+        
+            struct Frame
+            {
+                uint16 startTick;
+                uint16 flags <format=binary>;
+        
+                FrameContents contents;
+            };
+    
+            local uint64 currPos = FTell();
+            FSeek(startof(parentof(parentof(this))) + dataOffset);
+            Frame frames[numFrames] <optimize=false>;
+            FSeek(currPos);
+        } 
+    }
+};
+
+struct S3ChannelList(uint32 size)
+{
+    S3Channel channels[size] <optimize=false>;
+};
+
+typedef struct
+{
+    char formatToken[8];
+    uint32 version;
+    uint32 flags <format=binary>;
+    float  tickLength;
+    uint16 numTicks;
+    uint16 _padding <hidden=true>;
+    uint32 channelCount;
+    uint32 f1PaletteSize;
+
+    uint32 channelDataOffset;
+    uint32 f1PaletteDataOffset;
+    uint32 nameOffset;
+    uint32 sourceAssetNameOffset;
+
+    // Load the clip name for convenience
+    local uint64 currPos = FTell();
+    FSeek(startof(this) + nameOffset);
+    string name;
+    FSeek(currPos);
+
+    // Load the source asset name for convenience
+    currPos = FTell();
+    FSeek(startof(this) + sourceAssetNameOffset);
+    string sourceAssetName;
+    FSeek(currPos);
+
+    // Load the F1 Palette if we have one
+    if (f1PaletteSize > 0)
+    {
+        currPos = FTell();
+        FSeek(startof(this) + f1PaletteDataOffset);
+        F1Palette f1Palette(f1PaletteSize);
+        FSeek(currPos);
+    }
+
+    // Load the channel list if we have one (we will)
+    if (channelCount > 0)
+    {
+        currPos = FTell();
+        FSeek(startof(this) + channelDataOffset);
+        S3ChannelList channels(channelCount);
+        FSeek(currPos);
+    }
+
+} S3_CLIP;
+
+typedef struct
+{
+    uint32      version;
+    if(version != 14)
+    {
+        Warning("Unknown version.");
+        return -1;
+    }
+
+    uint32      flags <format=binary>;
+    float       duration;
+    Quaternion  initialOffsetQ;
+    Vector3     initialOffsetT;
+
+    if (version >= 5)
+        uint32 referenceNamespaceHash <format=hex>;
+
+    if (version >= 10)
+    {
+        uint32 surfaceNamespaceHash <format=hex>;
+        uint32 surfaceJointNameHash <format=hex>;
+    }
+
+    if (version >= 11)
+        uint32 surfacechildNamespaceHash <format=hex>;
+
+    if (version >= 7)
+        IO_STRING clipName;
+
+    IO_STRING rigNamespace;
+
+    if (version >= 4)
+    {
+        uint32 explicitNamespaceCount <hidden=true>;
+        if (explicitNamespaceCount>0)
+        {
+            IO_STRING explicitNamespaces[explicitNamespaceCount] <optimize=false>;
+        }
+    }
+
+    IkConfiguration ikConfiguration;
+    ClipEventList events;
+
+    uint32 codecDataLength <hidden=true>;
+    if (codecDataLength > 0)
+        S3_CLIP codecData;
+
+} CLIP_RESOURCE;
+
+CLIP_RESOURCE resource;

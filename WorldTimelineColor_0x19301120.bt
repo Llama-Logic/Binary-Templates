@@ -1,0 +1,86 @@
+//--------------------------------------
+// The Sims 4
+// Copyright 2015 Electronic Arts Inc. All rights reserved.
+//
+//--- 010 Editor v5.0.2 Binary Template
+// Resource Type: Binary template for World Color Timeline resource (type 0x19301120) Version 13
+//--------------------------------------
+
+typedef struct
+{
+    float r,g,b,a;
+    float time;
+
+} ColorData;
+
+
+typedef struct
+{
+    uint32 size;
+    if (size > 0 )
+    {
+        ColorData data[size];
+    }
+} ColorTimeLineData <optimize=false>;
+
+typedef struct
+{
+    uint32 version;
+    if(version < 13 || version > 14)
+    {
+        Warning("Unknown version detected. Please update the template.");
+        return -1;
+    }
+    ColorTimeLineData ambientColors;
+    ColorTimeLineData directionalColors;
+    ColorTimeLineData shadowColors;
+    ColorTimeLineData skyHorizonColors;
+    ColorTimeLineData mFogStartRange;
+    ColorTimeLineData mFogEndRange;
+    ColorTimeLineData skyHorizonDarkColors;
+    ColorTimeLineData skyLightColors;
+    ColorTimeLineData skyDarkColors;
+    ColorTimeLineData sunColors;
+    ColorTimeLineData haloColors;
+    ColorTimeLineData sunDarkCloudColors;
+    ColorTimeLineData sunLightCloudColors;
+    ColorTimeLineData horizonDarkCloudColors;
+    ColorTimeLineData horizonLightCloudColors;
+    ColorTimeLineData cloudShadowCloudColors;
+
+    uint32 poiId;   // Point of interest ID
+
+    ColorTimeLineData bloomThresholds;
+    ColorTimeLineData bloomIntensities;
+
+    float SunriseTime;
+    float SunsetTime;
+
+    ColorTimeLineData denseFogColors;
+    ColorTimeLineData denseFogStartRange;
+    ColorTimeLineData denseFogEndRange;
+
+    ColorTimeLineData moonRadiusMultipliers;
+    ColorTimeLineData sunRadiusMultipliers;
+    float starsAppearTime;
+    float starsDisappearTime;
+    
+    if (version>=14)
+    {
+        // If remapTimeline is true the times specified in the data are shifted by an hour by the 
+        // game runtime (to fix a bug).  If ColorTimeLine is V13 then remapTimeline is assumed to be true.        
+        BYTE remapTimeline;
+    }
+
+} ColorTimeLine <optimize=false>;
+
+
+uint32 version;
+if(version != 13)
+{
+    Warning("Unknown version detected. Please update the template.");
+    return -1;
+}
+
+uint32 dataCount;
+ColorTimeLine colorTimeLine[dataCount];

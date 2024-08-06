@@ -1,0 +1,258 @@
+//--------------------------------------
+// The Sims 4
+// Copyright 2016 Electronic Arts Inc. All rights reserved.
+//
+//--- 010 Editor v7.0.2 Binary Template
+// Resource Type: Binary template for DWorld resource (type 0x810a102d)
+//--------------------------------------
+
+//
+// ResourceKey
+//
+typedef struct
+{
+    UINT64 instance <format=hex>;
+    UINT32 type <format=hex>;
+    UINT32 group <format=hex>;
+} ResourceKey <read=ReadResourceKey>;
+
+string ReadResourceKey(ResourceKey& key)
+{
+    string s;
+    SPrintf(s, "%08x:%08x:%016Lx", key.type, key.group, key.instance);
+    return s;
+}
+
+//
+// Vector3
+//
+typedef struct
+{
+    float x,y,z;
+} Vector3;
+
+
+//
+//  Helper to look ahead and count how many chunks are in 
+//  upcoming data.  "limit" indicates how many bytes max 
+//  to look.  "sig" is what signature to look for, if empty
+//  string passed in, count all chunks.
+//
+uint32 CountChunks(uint32 limit, char sig[4])
+{
+    local uint32 curPos = FTell();
+    local uint32 endPos = curPos+limit;
+    local uint32 count = 0;
+    local char chunkHeader[4];
+    local uint32 chunkSize;
+
+    while( curPos < endPos)
+    {
+        ReadBytes( chunkHeader, curPos, 4 );
+        curPos += 4;
+        chunkSize = ReadInt(curPos);
+        curPos += (4+chunkSize);
+        if (chunkHeader==sig || sig =="")
+        {
+            count++;
+        }
+    }
+    return count;
+}
+
+//
+//  Lot Data
+//
+typedef struct
+{
+    char chunk[4] <hidden=true>;
+    uint32 chunkSize <hidden=true>;
+
+    switch (chunk)
+    {   
+        case "SIZX":
+            uint32 tileCountX;
+            break;
+        case "SIZZ":
+            uint32 tileCountZ;
+            break;
+        case "POS ":
+            Vector3 pos;
+            break;
+        case "ROT ":
+            float rotation;
+            break;
+        default:
+            Printf("Unrecognized chunk: %s\n", chunk);
+            return -1;
+    }   
+} LotData <optimize=false, read=ReadLotData>;
+
+string ReadLotData(LotData& data)
+{
+    string s="";
+
+    switch (data.chunk)
+    {   
+        default:
+            SPrintf(s, "%4s", data.chunk);
+            break;
+    }   
+    return s;
+}
+
+//
+//  Object Data
+//
+typedef struct
+{
+    char chunk[4] <hidden=true>;
+    uint32 chunkSize <hidden=true>;
+
+    switch (chunk)
+    {   
+        case "ID  ":
+            uint64 objectID <format=hex>;
+            break;
+        case "POS ":
+            Vector3 pos;
+            break;
+        case "ROT ":
+            float rotQuat[4];
+            break;
+        case "MODL":
+            ResourceKey model;
+            break;
+        case "LEVL":
+            break;
+            int32 level;
+        case "SCAL":
+            float scale;
+            break;
+        case "SCRP":
+            char scriptName[chunkSize];
+            break;
+        case "TRES":
+            Printf("UNUSED: %s (pos %d)\n", chunk, FTell());
+            break;
+        case "DEFG":
+            uint32 objectDefGUID32 <format=hex>;
+            break;
+        case "DGUD":
+            uint64 objectDefGUID64 <format=hex>;
+            break;
+        case "MLOD":
+            char minSpecLOD;
+            break;
+        case "PTID":
+            uint64 parentID <format=hex>;
+            break;
+        case "SLOT":
+            uint32 slotHash <format=hex>;
+            break;
+        default:
+            Printf("Unrecognized chunk: %4s (pos %d)\n", chunk, FTell());
+            return -1;
+    }   
+} ObjectData <optimize=false,read=ReadObjectData>;
+
+string ReadObjectData(ObjectData& data)
+{
+    string s="";
+
+    switch (data.chunk)
+    {   
+        default:
+            SPrintf(s, "%4s", data.chunk);
+            break;
+    }   
+    return s;
+}
+
+//
+//  Object Managers
+//
+typedef struct
+{
+    char chunk[4] <hidden=true>;
+    uint32 chunkSize <hidden=true>;
+
+    switch (chunk)
+    {   
+        case "ID  ":
+            uint64 objectManagerID <format=hex>;
+            break;
+        case "LOT ":
+            local uint32 numLotData <hidden=true> = CountChunks(chunkSize, "");
+            if ( numLotData > 0 )
+            {
+                LotData ld[numLotData];
+            }
+            break;
+        case "OBJ ":
+            local uint32 numObjectData <hidden=true> = CountChunks(chunkSize, "");
+            if ( numObjectData > 0 )
+            {
+                ObjectData od[numObjectData];
+            }
+            break;
+        case "REFS":
+            Printf("UNUSED: %s (pos %d)\n", chunk, FTell());
+            return -1;
+        default:
+            Printf("Unrecognized chunk: %4s (pos %d)\n", chunk, FTell());
+            return -1;
+    }   
+
+} ObjectManagerData <optimize=false, read=ReadObjectManagerData>;
+
+string ReadObjectManagerData(ObjectManagerData& data)
+{
+    string s="";
+
+    switch (data.chunk)
+    {   
+        case "ID  ":
+            SPrintf(s, "ID = %016Lx", data.objectManagerID);
+            break;
+            break;
+        case "OBJ ":
+            SPrintf(s, "OBJECT");
+            break;
+        default:
+            SPrintf(s, "%4s", data.chunk);
+            break;
+    }   
+    return s;
+}
+
+typedef struct
+{
+    char sigOMGR[4] <hidden=true>;
+    uint32 sizeOMGR <hidden=true>;
+    local uint32 numOMGRChunks <hidden=true> = CountChunks(sizeOMGR, "");
+    if ( numOMGRChunks > 0 )
+    {
+        ObjectManagerData omData[numOMGRChunks];
+    }
+} ObjectManager  <optimize=false>;
+
+//
+//
+//
+char sigOMGS[4] <hidden=true>;
+uint32 sizeOMGS <hidden=true>;
+if(sigOMGS != "OMGS" )
+{
+    Warning("Invalid Signature. %s", sig);
+    return -1;
+}
+
+local uint32 numOMGR <hidden=true> = CountChunks(sizeOMGS, "OMGR");
+if ( numOMGR > 0 )
+{
+    ObjectManager om[numOMGR];
+}
+    
+
+

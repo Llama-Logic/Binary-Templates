@@ -1,0 +1,172 @@
+//--------------------------------------
+// The Sims 4
+// Copyright 2017 Electronic Arts Inc.
+//
+//--- 010 Editor v8.0 Binary Template
+// Resource Type: CAS Preset Resource (type 0xeaa32add).  Version 12.
+//--------------------------------------
+
+
+enum ArchetypeFlags
+{
+    ARCHETYPE_NONE              = 0x00000000,
+
+    ARCHETYPE_CAUCASIAN         = 0x00000001,
+    ARCHETYPE_AFRICAN           = 0x00000002,
+    ARCHETYPE_ASIAN             = 0x00000004,
+    ARCHETYPE_MIDDLE_EASTERN    = 0x00000008,
+    ARCHETYPE_NATIVE_AMERICAN   = 0x00000010,
+
+    ARCHETYPE_ALL               = 0xffffffff
+};
+
+
+enum SimRegion
+{
+    SIMREGION_EYES      = 0,
+    SIMREGION_FACE_START = SIMREGION_EYES,
+    SIMREGION_NOSE,
+    SIMREGION_MOUTH,
+    SIMREGION_CHEEKS,
+    SIMREGION_CHIN,
+    SIMREGION_JAW, 
+    SIMREGION_FOREHEAD,                         
+
+    // Modifier-only face regions
+    SIMREGION_BROWS     = 8,
+    SIMREGION_EARS,
+    SIMREGION_HEAD,
+
+    // Other face regions
+    SIMREGION_FULLFACE  = 12,
+    SIMREGION_FACE_END = SIMREGION_FULLFACE,
+
+    // Modifier body regions
+    SIMREGION_CHEST     = 14,
+    SIMREGION_BODY_START = SIMREGION_CHEST,
+    SIMREGION_UPPERCHEST,
+    SIMREGION_NECK,
+    SIMREGION_SHOULDERS,
+    SIMREGION_UPPERARM,
+    SIMREGION_LOWERARM,
+    SIMREGION_HANDS,
+    SIMREGION_WAIST,
+    SIMREGION_HIPS,
+    SIMREGION_BELLY,
+    SIMREGION_BUTT,
+    SIMREGION_THIGHS,
+    SIMREGION_LOWERLEG,
+    SIMREGION_FEET,
+
+    // Other body regions
+    SIMREGION_BODY,
+    SIMREGION_UPPERBODY,
+    SIMREGION_LOWERBODY,
+    SIMREGION_BODY_END = SIMREGION_LOWERBODY,   // body end
+
+    SIMREGION_ALL = SIMREGION_BODY_END + 1,     // all
+
+    SIMREGION_INVALID   = 32
+};
+
+
+uint32 version;
+if(version < 7 || version > 12)
+{
+    Warning("Unknown version");
+    return -1;
+}
+
+uint32 ageGender            <format=hex>;
+
+if(version >= 11)
+{
+    uint32 BodyFrameGender;
+}
+
+if(version >= 8)
+{
+    uint32 Species;
+}
+
+SimRegion region;
+
+if(version >= 9)
+{
+    uint32 BodySubType;
+}
+
+uint32 archtype;   //  See ArchetypeFlags
+float displayIndex;
+uint32 presetNameKey        <format=hex>;
+uint32 presetDescriptKey    <format=hex>;
+
+typedef struct
+{
+    uint64 instance <format=hex>;
+    if(version < 9)
+    {
+        uint32 region;  // No longer used
+    }
+} Sculpt;
+
+uint32 numSculpt;
+if (numSculpt>0)
+{
+    Sculpt scultps[numSculpt];
+}
+
+typedef struct
+{
+    uint64 instance <format=hex>;
+    float weight;
+    if(version < 9)
+    {
+        uint32 region;    // No longer used
+    }
+} Modifier;
+
+uint32 numModifiers;
+if (numModifiers>0)
+{
+    Modifier modifiers[numModifiers];
+}
+
+char isPhysiqueSet;
+if ( isPhysiqueSet == 1 )
+{
+    float heavyValue;
+    float fitValue;
+    float leanValue;
+    float bonyValue;
+}
+
+char isPartSet;
+if ( isPartSet == 1 )
+{
+    // Currently only used for pet fur, results will vary if used for something else.
+    uint64 instance <format=hex>;
+    uint32 bodyType;
+}
+
+float chanceForRandom;
+
+typedef struct
+{
+    uint16 category;
+    if (version>=10)
+    {
+        uint32 tagValue;
+    }
+    else
+    {
+        uint16 tagValue;
+    }
+} Tag;
+
+
+uint32 tagcount;
+if (tagcount>0)
+{
+    Tag tags[tagcount];
+}

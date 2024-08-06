@@ -1,0 +1,184 @@
+//--------------------------------------
+// The Sims 4
+// Copyright 2016 Electronic Arts Inc. All rights reserved.
+//
+//--- 010 Editor v5.0.2 Binary Template
+// Resource Type: Thumbnail Cache Table (type 0xb93a9915) Version 6
+//--------------------------------------
+
+enum ThumbnailType 
+{
+    THUMBNAILTYPE_OBJECT,
+    THUMBNAILTYPE_SIM,
+    THUMBNAILTYPE_SIM_BUST,
+    THUMBNAILTYPE_SIM_CAS_PRESET,
+    THUMBNAILTYPE_SIM_CAS_PART,
+    THUMBNAILTYPE_SIM_COMPLETE_HEAD,
+    THUMBNAILTYPE_SIM_FEATURED_OUTFIT,
+    THUMBNAILTYPE_SIM_FULLBODY,
+    THUMBNAILTYPE_SIM_PORTRAIT_CAS,
+    THUMBNAILTYPE_SIM_HOUSEHOLD,
+    THUMBNAILTYPE_FLOOR,
+    THUMBNAILTYPE_WALL,
+    THUMBNAILTYPE_MODEL,
+    THUMBNAILTYPE_AVATAR,
+    THUMBNAILTYPE_LOT_BLUEPRINT,
+    THUMBNAILTYPE_FENCE,
+    THUMBNAILTYPE_STAIR,
+    THUMBNAILTYPE_RAILING,
+    THUMBNAILTYPE_FLOORTRIM_FRIEZE,
+    THUMBNAILTYPE_ROOFTRIM,
+    THUMBNAILTYPE_LOT_PREVIEW,
+    THUMBNAILTYPE_MAGALOG,
+    THUMBNAILTYPE_MAGALOG_MASK,
+    THUMBNAILTYPE_MEMORY,
+    THUMBNAILTYPE_GALLERY,
+    THUMBNAILTYPE_PHOTOBOOTH_FAMILY,
+    THUMBNAILTYPE_SIM_TRAVEL,
+    THUMBNAILTYPE_MAGALOG_EXCHANGE,
+    THUMBNAILTYPE_ROOF_PATTERN,
+    THUMBNAILTYPE_CEILING_RAIL,
+    THUMBNAILTYPE_LOT_PAINT,
+    THUMBNAILTYPE_WORLDMAP_LOT,
+    THUMBNAILTYPE_SIM_GALLERY,
+    THUMBNAILTYPE_BUNDLE_PREVIEW,
+    THUMBNAILTYPE_SIM_MANNEQUIN_OUTFIT,
+    THUMBNAILTYPE_SIM_PORTRAIT,
+};
+
+enum ThumbnailSize
+{
+    THUMBNAILSIZE_SMALL,
+    THUMBNAILSIZE_MEDIUM,
+    THUMBNAILSIZE_LARGE,
+    THUMBNAILSIZE_EXTRALARGE,
+    THUMBNAILSIZE_ENORMOUS,
+    THUMBNAILSIZE_MAX
+};
+
+typedef struct
+{
+    UINT32 type <format=hex>;
+    UINT32 group <format=hex>;
+    UINT64 instance <format=hex>;
+} ResourceKey <read=ReadResourceKey>;
+
+string ReadResourceKey(ResourceKey& key)
+{
+    string s;
+    SPrintf(s, "%08x:%08x:%016Lx", key.type, key.group, key.instance);
+    return s;
+}
+
+UINT32 version;
+if(version != 6)
+{
+    Warning("Unknown version.");
+    return -1;
+}
+
+UINT64 nextInstanceValue;
+UINT32 recordCount;
+
+typedef struct
+{
+    ThumbnailType type;
+    ThumbnailSize size;
+    UINT32 versionType <format=hex>;
+    UINT64 resourceID <format=hex>;
+    UINT32 index;
+    UCHAR  bIsPresent;
+    
+    if (bIsPresent!=0)
+    {
+        switch (type)
+        {
+            case THUMBNAILTYPE_SIM:
+            case THUMBNAILTYPE_SIM_BUST:
+            case THUMBNAILTYPE_SIM_CAS_PRESET:
+            case THUMBNAILTYPE_SIM_CAS_PART:
+            case THUMBNAILTYPE_SIM_COMPLETE_HEAD:
+            case THUMBNAILTYPE_SIM_FEATURED_OUTFIT:
+            case THUMBNAILTYPE_SIM_FULLBODY:
+            case THUMBNAILTYPE_SIM_MANNEQUIN_OUTFIT:
+            case THUMBNAILTYPE_SIM_PORTRAIT_CAS:
+            case THUMBNAILTYPE_SIM_HOUSEHOLD:
+            case THUMBNAILTYPE_PHOTOBOOTH_FAMILY:
+            case THUMBNAILTYPE_SIM_TRAVEL:
+            case THUMBNAILTYPE_SIM_GALLERY:
+            case THUMBNAILTYPE_SIM_PORTRAIT:
+                const uint32 SIM_THUMBNAIL_SERIALIZATION_ID       = 0x00000001;
+                const uint32 HOUSEHOLD_THUMBNAIL_SERIALIZATION_ID = 0x00000002;
+                const uint32 CAS_PART_THUMBNAIL_SERIALIZATION_ID  = 0x11111111;
+
+                UINT32 thumbnailID <format=hex>;
+
+                if (thumbnailID == CAS_PART_THUMBNAIL_SERIALIZATION_ID)
+                {
+                    UCHAR gender;
+                }
+                else if (thumbnailID == SIM_THUMBNAIL_SERIALIZATION_ID)
+                {
+                    UINT64 simID <format=hex>;
+                    UINT32 pose;
+                }
+                else if (thumbnailID == HOUSEHOLD_THUMBNAIL_SERIALIZATION_ID)
+                {
+                    UINT64 familyID <format=hex>;
+                }
+                break;
+
+            case THUMBNAILTYPE_OBJECT:
+            case THUMBNAILTYPE_MODEL:
+                UINT32 numModelsAndFlags <format=hex>;
+
+                local UINT32 numModels;
+                local UINT32 flags;
+                flags = numModelsAndFlags & 0xfff00000;
+                numModels = numModelsAndFlags & ~0xfff00000;
+
+                typedef struct
+                {
+                    UINT64 modelKey <format=hex>;
+                    float position[4];
+                } Model;
+
+                if (numModels!=0)
+                {
+                    Model modelData[numModels];
+                }
+
+                if (flags&0x80000000)
+                {
+                    UINT64 paintingKey <format=hex>;
+                }
+                if (flags&0x01000000)
+                {
+                    UINT32 paintingGroup;
+                }
+                if (flags&0x40000000)
+                {
+                    UINT32 geoState;
+                }
+                if (flags&0x02000000)
+                {
+                    UINT32 materialState;
+                }
+                if (flags&0x3c000000)
+                {
+                    UCHAR modelIndex;
+                }
+                break;
+        }
+    }
+
+    ResourceKey key;
+    UCHAR   bAlias;  // If true, look for this this item in the shipped data, not the cache.
+
+} TableEntry;
+
+
+if ( recordCount > 0)
+{
+    TableEntry tableData[recordCount] <optimize=false>;
+}

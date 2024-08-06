@@ -1,0 +1,416 @@
+//--------------------------------------
+// The Sims 4
+// Copyright 2014 Electronic Arts Inc. All rights reserved.
+//
+//--- 010 Editor v5.0 Binary Template
+// Resource:  Shaders_Win32.precomp version 1
+//--------------------------------------
+
+LittleEndian();
+
+char mHeaderTag[4] <comment="SPKG">;
+uint32 mVersion <comment="Version 1">;
+
+//
+//
+//
+typedef struct
+{
+    char mTag[4] <comment="SHDB">;
+    uint32 mSize;
+
+    char mLinkTag[4] <comment="LINK">;
+
+    typedef struct
+    {
+        byte mIsPixelShader;
+        uint16 mShaderPlatformMask <format=hex>;
+        uint32 mShaderSize;
+
+        if ( mIsPixelShader == 1) 
+            char mTag[4] <comment="PSHD">;
+        else
+            char mTag[4] <comment="VSHD">;
+
+        uint32 mByteCodeSize;
+        byte mByteCode[mByteCodeSize];  // Can be disassembled with D3DXDisassembleShader
+
+    } PlatformShader;
+
+    uint32 mPSCount;
+    if (mPSCount>0)
+    {
+        PlatformShader mPlatformShaders[mPSCount] <optimize=false>;;
+    }
+
+    char mDefaultBufferTag[4] <comment="DBUF">;
+    uint32 mDefaultsSize;
+    uint32 mDefaultsData[mDefaultsSize];
+
+    typedef struct
+    {
+        uint32 mHashedName <format=hex>;
+        uint32 mFlags <format=hex>;
+    } ShaderParams;
+
+    char mShaderParamTag[4] <comment="SPAR">;
+    uint32 mShaderParamsCount;
+    if (mShaderParamsCount>0)
+    {
+        ShaderParams mShaderParams[mShaderParamsCount];
+    }
+
+} ShaderDBSection;
+
+ShaderDBSection mShaderDBSection;
+
+//
+//
+//
+typedef struct
+{
+    char mSamplerDBTag[4] <comment="SPKG">;
+    char mSamplerLinkSectionTag[4] <comment="SMPS">;
+    uint32 mSSCount;
+    
+    typedef struct
+    {
+        uint32 val0;
+        uint32 val1;
+    } StatePair;
+
+    typedef struct
+    {
+        uint32 mByteSize;
+        local uint32 stateCount = mByteSize >> 3;
+        StatePair mStatePairs[stateCount];
+    } SamplerState;
+    
+    SamplerState mSamplerState[mSSCount] <optimize=false>;
+
+} SamplerLinkSection;
+
+SamplerLinkSection mSamplerLinkSection;
+
+//
+//
+//
+typedef struct
+{
+    char mTag[4] <comment="SETS">;
+    uint32 mCount;
+
+    typedef struct
+    {
+        uint32 mModeName <format=hex>;
+        uint32 mModeShaderSetName <format=hex>;
+    } Mode;
+
+    typedef struct
+    {
+        uint32 mHash <format=hex>;
+        uint32 mNameLen;
+        char mName[mNameLen];
+        uint32 mMultiplier;
+        uint32 mStart;
+        uint32 mRange;
+    } VariantField;
+
+    typedef struct
+    {
+       enum Type
+       {
+            kTypeError,
+            kTypeFloat,
+            kTypeFloat2,
+            kTypeFloat3,
+            kTypeFloat4,
+            kTypeBool,
+            kTypeInt4,
+            kTypeTexture
+        };
+
+        Type mType;
+        uint32 mNameOffset;     // Heap offset
+        uint32 mValueOffset;    // Heap offset
+
+        BigEndian();
+        uint32 mCategoryLen;
+        if ( mCategoryLen > 0 )
+        {
+            wchar_t mCategory[mCategoryLen];
+        }
+        LittleEndian();
+
+        byte mHidden;
+        byte mDoNotExport;
+        byte mNormalAndSpec;
+       
+    } Param;
+
+    typedef struct
+    {
+        char mTag[4] <comment="SSET">;
+        uint32 mNameLen;
+
+        local uint32 alignmentpadding = (mNameLen & 3);
+        char mName[mNameLen];
+        if (alignmentpadding>0)
+        {
+            char mPad[4-alignmentpadding];
+        }
+
+        uint32 mCount;
+        if ( mCount > 0 )
+        {
+            Mode mModes[mCount];
+        }
+
+        uint32 mByteCodeSize;
+        if ( mByteCodeSize > 0 )
+        {
+            uint32 mByteCode[mByteCodeSize];
+        }
+
+        uint32 mVariantFieldCount;
+        if ( mVariantFieldCount > 0 )
+        {
+            VariantField mVariantFields[mVariantFieldCount] <optimize=false>;
+        }
+
+        uint32 mParamCount;
+        
+        BigEndian();
+        uint32 mParamNameLen;
+        wchar_t mParamName[mParamNameLen];
+
+        uint32 mParamUINameLen;
+        if ( mParamUINameLen > 0 )
+        {
+            wchar_t mParamUIName[mParamUINameLen];
+        }
+
+        uint32 mParamUIDescLen;
+        if (mParamUIDescLen > 0 )
+        {
+            wchar_t mParamUIDesc[mParamUIDescLen];
+        }
+        LittleEndian();
+
+        if ( mParamCount > 0 )
+        {
+            Param mParams[mParamCount] <optimize=false>;
+        }
+
+        uint32 mHeapSize;
+        if ( mHeapSize > 0 )
+        {
+            char mHeap[mHeapSize];
+        }
+
+    } ShaderSet;
+
+    ShaderSet mShaderSet[mCount] <optimize=false>;
+
+} ShaderSets;
+
+ShaderSets mShaderSets;
+
+//
+//
+//
+
+// Counts the # of bits set in an integer
+uint32 NumSetBits(uint32 i)
+{
+     i = i-((i>>1) & 0x55555555);
+     i = (i& 0x33333333)+((i >> 2)&0x33333333);
+     return (((i+(i>>4))& 0x0F0F0F0F)*0x01010101)>> 24;
+}
+
+typedef struct
+{
+    char mTag[4] <comment="SHDS">;
+
+    enum ShaderInfoFlags
+    {
+        kShaderInfoFlagNone = 0,
+        kShaderInfoFlagPreTranslucent = 0x1,
+        kShaderInfoFlagTranslucent    = 0x2,
+        kShaderInfoFlagAlphaBlended    = 0x4,
+        kShaderInfoFlagPostAlpha       = 0x8,
+        kShaderInfoFlagWaterTranslucent=0x10,
+        kShaderInfoFlagPostWaterTranslucent=0x20,
+        kShaderInfoFlagCloudBillboards = 0x40,
+        kShaderInfoFlagAnimates = 0x100,
+        kShaderInfoCustomShadowTechnique = 0x400,
+        kShaderInfoCustomShadowShader = 0x800,
+        kShaderInfoFlagReflective = 0x1000,
+        kShaderInfoFlagAvoidStandins = 0x2000,
+        kShaderInfoFlagYRotBillboard = 0x4000,
+        kShaderInfoFlagPretransformed = 0x8000,
+        kShaderInfoFlagGrassBillboard = 0x10000,
+        kShaderInfoFlagPerfectLight = 0x20000,
+        kShaderInfoFlagUsesBoundaryColors = 0x40000,
+        kShaderInfoFlagForceSsaoDepth = 0x80000,
+        kShaderInfoFlagAll  = 0xFFFFF
+    };
+
+    enum
+    {
+        kShaderRTOp_None        = 0x00,
+        kShaderRTOp_ClearTarget = 0x01,
+        kShaderRTOp_ClearDepth  = 0x02,
+        kShaderRTOp_ClearStencil= 0x04,
+        kShaderRTOp_ClearMask   = 0x07,
+        kShaderRTOp_SetDepth    = 0x08,
+        kShaderRTOp_SetColor0   = 0x10,
+        kShaderRTOp_SetColor1   = 0x20,
+        kShaderRTOp_SetColor2   = 0x40,
+        kShaderRTOp_SetColor3   = 0x80,
+        kShaderRTOp_SetMask     = 0xF8
+    };
+
+    typedef struct
+    {
+        uint32 mHashedName <format=hex>;
+        uint32 mDestInfo;
+        uint32 mDefaultInfo;
+    } ShaderParam;
+
+    typedef struct
+    {
+        uint32 mSamplerStateSourceID <format=hex>;
+        uint32 mTextureName <format=hex>;
+    } Sampler;
+
+    typedef struct
+    {
+        char mTag[4] <comment="PASS">;
+        
+        uint32 mOverrideGeometryType;
+        uint32 mRTOps;
+        if ( mRTOps & kShaderRTOp_SetMask)
+        {
+            uint32 mRenderTargetHandles[4];
+            uint32 mDepthTargetHandle;
+        }
+
+        if (mRTOps & kShaderRTOp_ClearMask)
+        {
+            float mClearDepth;
+            uint32 mClearStencil; // Unused
+            uint32 mPackedClearColor;
+        }
+        
+        uint32 mVertexShaderCodeID;
+        uint32 mPixelShaderCodeID;
+
+        char mParmTag1[4] <comment="PARM">;
+        uint32 mVertexShaderParamDefaultOffset;
+        uint32 mVertexShaderParamCount;
+        if ( mVertexShaderParamCount > 0)
+            ShaderParam mVertexShaderParams[mVertexShaderParamCount];
+
+        char mParmTag2[4] <comment="PARM">;
+        uint32 mPixelShaderParamDefaultOffset;
+        uint32 mPixelShaderParamCount;
+        if ( mPixelShaderParamCount > 0 )
+            ShaderParam mPixelShaderParams[mPixelShaderParamCount];
+
+        uint32 mRenderStateCount;
+        
+        local uint32 renderStateCount = mRenderStateCount & 0xffff;
+        local uint32 dynamicRenderStateCount = mRenderStateCount >> 16;
+        
+        if ( renderStateCount > 0 )
+            uint32 mRenderStatePairs[renderStateCount*2];
+        if ( dynamicRenderStateCount > 0 )
+            uint32 mDynamicRenderStates[dynamicRenderStateCount*3];
+
+        uint32 mSamplersInUse <format=binary>;
+        local uint32 numSamplersInUse = NumSetBits(mSamplersInUse);
+        if ( numSamplersInUse > 0 )
+            Sampler mSamplers[numSamplersInUse];
+
+        uint32 mDynamicSamplerStateCount;
+        if ( mDynamicSamplerStateCount > 0 )
+            uint32 mDynamicSamplerStates[mDynamicSamplerStateCount*3];
+
+    } Pass;
+
+    typedef struct
+    {
+        char mTag[4] <comment="TECH">;
+        uint32 mHashedName <format=hex>;
+        uint32 mPassCount;
+        if ( mPassCount > 0)
+            Pass Passes[mPassCount] <optimize=false>;
+    } Technique;
+
+    typedef struct
+    {
+        uint32 mVariantID <format=hex>;
+        uint32 mInfoFlags <format=hex>;
+        
+        if ( mInfoFlags & kShaderInfoCustomShadowTechnique )
+            uint32 mCustomShadowTechniqueNameHash;
+        if ( mInfoFlags & kShaderInfoCustomShadowShader )
+            uint32 mCustomShadowShaderNameHash;
+
+        uint32 mTechniqueCount;
+        if (mTechniqueCount>0)
+            Technique mTechniques[mTechniqueCount] <optimize=false>;
+
+    } Shader;
+
+    typedef struct
+    {
+        char mTag[4] <comment="SBLK">;
+        uint32 mShaderID <format=hex>;
+        uint32 mBlockPlatformMask <format=hex>;
+        uint32 mBlockSize;
+        uint32 mShaderCount;
+        Shader mShaders[mShaderCount] <optimize=false>;
+    } ShaderBlock;
+
+
+    uint32 mShaderBlockCount;
+    ShaderBlock mShaderBlocks[mShaderBlockCount] <optimize=false>;
+} Shaders;
+
+Shaders mShaders;
+
+//
+//  Hashed name look up table
+//
+typedef struct
+{
+    uint64 mKey <format=hex>;
+    uint32 mStrLen;
+    char mName[mStrLen];
+} KeyNameMapEntry  <read=ReadName>;
+
+string ReadName(KeyNameMapEntry& entry)
+{
+    string s;
+    SPrintf(s, "%016Lx : %s", entry.mKey, entry.mName);
+    return s;
+}
+
+typedef struct
+{
+    char mTag[4] <comment="KNM ">;
+    uint32 mSize;
+    uint32 mVersion;
+    uint32 mNumItems;
+    
+    KeyNameMapEntry mKeyNameMap[mNumItems] <optimize=false>;
+} KeyNameMap;
+
+KeyNameMap mKeyNameMap;
+
+//
+//
+//
+char mEndTag[4] <comment="END ">;

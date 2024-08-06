@@ -1,0 +1,36 @@
+//--------------------------------------
+// The Sims 4
+// Copyright 2016 Electronic Arts Inc. All rights reserved.
+//
+//--- 010 Editor v7.0.2 Binary Template
+// Resource Type: World Description Resource (0xa680ea4b) Version 8
+//--------------------------------------
+
+uint32 version;
+if(version != 8)
+{
+    Warning("Invalid Version.");
+    return -1;
+}
+
+uint32 worldNameKey                 <format=hex>;
+uint32 worldDescriptionKey          <format=hex>;
+uint32 simoleonPrice;
+uint64 regionDescriptionInstanceId  <format=hex>; // Region this world belongs to
+
+uint32 string_length;
+if (string_length!=0)
+{
+    char worldName[string_length];
+}
+uint64 ambienceFileInstanceId       <format=hex>;
+uint32 publicSpaceAuralMaterial     <format=hex>;
+
+uchar enableTimeOverride;
+uchar hour;
+uchar minute;
+
+uint64 hsvTweakerFileInstanceId     <format=hex>;
+
+uint64 descriptorIconFileNameHash           <format=hex>;
+uint64 descriptorSelectedIconFileNameHash   <format=hex>;

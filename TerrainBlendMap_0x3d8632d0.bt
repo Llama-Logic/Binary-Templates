@@ -1,0 +1,145 @@
+//--------------------------------------
+// The Sims 4
+// Copyright 2017 Electronic Arts Inc.
+//
+//--- 010 Editor v7.0 Binary Template
+// Resource Type: Binary template for Terrain Blend Map (type 0x3d8632d0) Version 0x0300
+//--------------------------------------
+
+//
+//  Defines the influence of each terrain paint layer on the terrain.
+//
+const int32 kLayerBlockWidthBits    <hidden=true> = 4;
+const int32 kLayerBlockWidth        <hidden=true> = 1 << kLayerBlockWidthBits;
+
+uint16 version <format=hex>;
+if(version != 0x0300) 
+{
+    Printf("ERROR: Unknown version of detected.\n");
+    return -1;
+}
+
+uint16 signature <format=hex>;
+if(signature != 0xA5FF) 
+{
+    Printf("ERROR: Unknown signature of detected.\n");
+    return -1;
+}
+
+uint32 width;
+uint32 height;
+uint32 layerBlockWidth;
+uint32 layerBlockHeight;
+
+if(layerBlockWidth != kLayerBlockWidth || layerBlockHeight != kLayerBlockWidth) 
+{
+    Printf("ERROR: layerBlockWidth and layerBlockHeight must be %d\n",kLayerBlockWidth );
+    return -1;
+}
+
+uint32 layerCount;
+uint32 encodedLayers;
+
+typedef struct 
+{
+    uchar idxHi;
+    uchar idxLo;
+    local uint32 blockIndex = idxLo + ((uint32)idxHi << 8);
+    uchar compression;
+
+    
+    if (compression == 0)
+    {
+        // uncompressed
+        uchar data[kLayerBlockWidth*kLayerBlockWidth];
+    }
+    else
+    {
+        // solid block
+        uchar val;
+    }
+
+} LayerBlock <optimize=false>;
+
+
+typedef struct 
+{
+    uint32 layerSize;
+    local uint64 restartPoint = FTell() + ((layerSize + 3) & ~3);
+
+    uint32 layerBlockCount;
+    uchar layerID;
+
+    LayerBlock layerBlocks[layerBlockCount];
+
+    
+    if (restartPoint-FTell() > 3 )
+    {
+        Printf("ERROR: restartPoint should only be needed for alignment.\n");
+        return -1;
+    }
+
+    FSeek(restartPoint);
+
+} Layer <optimize=false>;
+
+if (encodedLayers > 0 )
+{
+    Layer layers[encodedLayers];
+}
+
+
+//
+//  Example of how to query the data given x,z world terrain coordinates.
+//
+local uint32 query_layer <hidden=true> = 2;
+local uint32 query_x <hidden=true> = 342;
+local uint32 query_z <hidden=true> = 465;
+
+if ( query_x >= width || query_z >= height)
+{
+    Printf("ERROR: Invalid query location.\n");
+    return -1;
+}
+
+local uint32 bi <hidden=true>;
+
+{
+    // Figure out which block this point is in.
+    local uint32 blockX             <hidden=true> = (uint32)query_x >> kLayerBlockWidthBits;
+    local uint32 blockZ             <hidden=true> = (uint32)query_z >> kLayerBlockWidthBits;
+    local uint32 layerBlockMapWidth <hidden=true> = ((width - 1) >> kLayerBlockWidthBits) + 1;
+    local uint32 blockOffset        <hidden=true> = blockZ * layerBlockMapWidth + blockX;
+    for( bi = 0 ; bi < layers[query_layer].layerBlockCount ; bi++ )
+    {
+        if ( layers[query_layer].layerBlocks[bi].blockIndex == blockOffset)
+        {   
+            break;
+        }
+    }
+    if ( bi >= layers[query_layer].layerBlockCount )
+    {
+        Printf("ERROR: Could not locate block %d.\n", blockOffset);
+        return -1;
+    }
+}
+
+uchar GetWeightFromBlock(LayerBlock &block, int x, int z)
+{
+    local uchar result;
+    if(block.compression == 1)
+    {
+        result = block.val;
+    }
+    else
+    {
+        result = block.data[((z & (kLayerBlockWidth - 1)) << kLayerBlockWidthBits) + (x & (kLayerBlockWidth - 1))];
+    }
+    return result;
+}
+
+local uchar mapWeight       <hidden=true> = GetWeightFromBlock(layers[query_layer].layerBlocks[bi], query_x, query_z);
+const float kMaxWeight      <hidden=true> = 255.f;
+local float result_weight   <hidden=true> = (float)mapWeight/kMaxWeight;
+
+Printf("Test Query: [Layer:%d][blockOffset:%d][x:%d][z:%d][result:%f]\n", query_layer, blockOffset, query_x, query_z, result_weight);

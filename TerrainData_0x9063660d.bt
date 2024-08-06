@@ -1,0 +1,149 @@
+//--------------------------------------
+// The Sims 4
+// Copyright 2016 Electronic Arts Inc. All rights reserved.
+//
+//--- 010 Editor v7.0 Binary Template
+// Resource Type: Binary template for WorldTerrain (type 0x9063660d) Version 19
+//--------------------------------------
+
+//
+// Resource Key
+//
+typedef struct
+{
+    UINT32 type <format=hex>;
+    UINT32 group <format=hex>;
+    UINT64 instance <format=hex>;
+} ResourceKey <read=ReadResourceKey>;
+
+string ReadResourceKey(ResourceKey& key)
+{
+    string s;
+    SPrintf(s, "%08x:%08x:%016Lx", key.type, key.group, key.instance);
+    return s;
+}
+
+
+//
+// Wide string
+//
+typedef struct
+{
+    UINT32 length;
+
+    if (length>0)
+    {
+        wchar_t text[length];
+    }
+
+} String16 <read=ReadString16>;
+
+wstring ReadString16(String16& s)
+{
+    if (s.length == 0)
+    {
+        return "<empty>";
+    }
+    return s.text;
+}
+
+
+//
+// WorldTerrain Data
+//
+
+UINT16 version;
+if(version < 18 || version > 19)  // Base game shipped with version 18
+{
+    Warning("Unknown version of detected.");
+    return -1;
+}
+
+UINT32 groupID;
+UINT32 mapWidth;
+UINT32 mapHeight;
+UINT32 gridScale;
+UINT32 heightScale;
+
+
+typedef struct
+{
+    ResourceKey key;
+    String16    path;
+} ColorMap;
+
+UINT32 colorMapSize;
+ColorMap colorMapData[colorMapSize] <optimize=false>;
+
+
+typedef struct
+{
+    UINT32      terrainType;
+    String16    layerName;
+    String16    soundType;
+    ResourceKey key;
+    String16    path;
+    FLOAT       specularScale;
+} ColorMapProperties <optimize=false>;
+
+UINT32 colorMapPropertiesSize;
+ColorMapProperties colorMapPropertiesData[colorMapPropertiesSize];
+
+UINT32 highLODMaxVertices;
+UINT32 lowLODMaxVertices;
+UINT32 highLODMaxChunkVertices;
+UINT32 lowLODMaxChunkVertices;
+
+if ( version > 18 )
+{
+    UINT32 heightToleranceFraction;
+}
+
+
+typedef struct
+{
+    UCHAR bOpaquePass;
+    UCHAR bLightingPass;
+    UCHAR layerCount;
+    UCHAR layerIDs[layerCount];
+
+    UINT32 unusedCount;
+    UINT32 unused[unusedCount];
+
+} PassInfo <optimize=false>;
+
+
+typedef struct
+{
+    UINT64 lotID;
+    UINT32 passCount;
+    PassInfo PassInfoData[passCount];
+
+} LotInfo <optimize=false>;
+
+typedef struct
+{
+    UINT32 size;
+
+    UINT32 x, z;
+    UINT32 width, depth;
+    FLOAT centerx, centerz;
+
+    UINT32 blendLayerCount;
+    CHAR blendData[blendLayerCount];
+
+    UINT32 lotInfoCount;
+    if ( lotInfoCount > 0 )
+    {
+        LotInfo LotInfoData[lotInfoCount];
+    }
+    
+} Chunk <optimize=false>;
+
+
+UINT32 chunkCount;
+Chunk ChunkData[chunkCount];
+
+
+ResourceKey specularCubeTexture;
+String16    specularCubeTexturePath;

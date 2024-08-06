@@ -1,0 +1,176 @@
+//--------------------------------------
+// The Sims 4
+// Copyright 2014-2016 Electronic Arts Inc. All rights reserved.
+//
+//--- 010 Editor v5.0 Binary Template
+// Resource Type: Binary template for DeformerMapResource (type 0xdb43e069) Version 7
+//--------------------------------------
+
+//  Dmap resources define a displacement for model vertices when the model is constructed to 
+//  achieve deformation of the Sim geometry based on user customization. There are many Dmap 
+//  resources, a particular resource will define a gender/age, region and a morph state 
+//  (for example "yfBody_Heavy", "yfBody_Fit", "ymFeet_Long", "ymFeet_Short"). 
+//  Furthermore there are two variations of the resource, one the contains the normal and one 
+//  that contains the vertex delta - for example:
+//      "ymFeet_Short_Normals" (resource db43e069:00000000:c351e7260b39e239) and 
+//      "ymFeet_Short_Shape"   (resource db43e069:00000000:cbe85057a5c4ac2a).
+//
+//  Within a Dmap resource itself there can be two sets of data defined, one for skin tight 
+//  geometry and one for "robe" data (i.e. with clothing on). This is because deformation 
+//  should affect the geometry differently depending on if the geometry is loose clothing 
+//  as opposed to skin or skintight clothing.
+//
+//  The 2nd UV set in the CAS part geometry maps to the displacement data encoded in the 
+//  the Dmap resource which is used to modify the geometry when the Sim is built. 
+//  Additionally, the red component of vertex color in the geometry is used to weight 
+//  between the "skintight" or "robe" data - this allows gradual transition from skintight to clothing.
+//
+// In the DMap resource each pixel is encoded as a 3 chars (xyz) with the following scaling applied:
+//   - Zero displacement is mapped to 128
+//   - The range for vertex xyz deltas is [-0.2,0.2],  mapped linearly to [0,256]
+//   - The range for normal xyz deltas is [-0.75,0.75] mapped lineraly to [0,256]
+//   NOTE: As of V7 this scaling range is now dynamically defined for increased precision.
+//         See mSkintightMinVal, mSkintightDelta, mRobeMinVal, mRobeDelta below.
+//
+
+enum <uchar> Physiques
+{
+    BODYBLENDTYPE_HEAVY             = 0,
+    BODYBLENDTYPE_FIT               = 1,
+    BODYBLENDTYPE_LEAN              = 2,
+    BODYBLENDTYPE_BONY              = 3,
+    BODYBLENDTYPE_PREGNANT          = 4,
+    BODYBLENDTYPE_HIPS_WIDE         = 5,
+    BODYBLENDTYPE_HIPS_NARROW       = 6,
+    BODYBLENDTYPE_WAIST_WIDE        = 7,
+    BODYBLENDTYPE_WAIST_NARROW      = 8,
+    BODYBLENDTYPE_IGNORE            = 9,   // Assigned to deformation maps associated with sculpts or modifiers, instead of a physique.
+    BODYBLENDTYPE_AVERAGE           = 100, // Special case used to indicate an "average" deformation map always applied for a given age
+};
+
+enum <uchar> ShapeOrNormals
+{
+    SHAPE_DEFORMER = 0,     // This resource contains positional deltas
+    NORMALS_DEFORMER = 1    // This resource contains normal deltas
+};
+
+// Is the robe channel interleaved with the skin tight data.
+enum <uchar> RobeChannel
+{
+    ROBECHANNEL_PRESENT = 0,
+    ROBECHANNEL_DROPPED = 1,
+    ROBECHANNEL_ISCOPY = 2,     // Robe data not present but is the same as skin tight data.
+};
+
+UINT32 version; 
+if(version < 5 || version > 7)
+{
+    Warning("Unknown version of detected.");
+    return -1;
+}
+
+
+// we save doubled width of the dmap image.
+UINT32  dmap_doubled_width; 
+UINT32  dmap_height;
+
+UINT32 mAgeGender <format=hex>;            
+
+if(version >= 6)
+{
+    UINT32  reserved_must_be_one; // Set to one
+}
+
+Physiques Physique;
+ShapeOrNormals shapeOrNormals;
+
+// Optimization: the DMAP is cropped to the AABB inside the image the contains actual data.
+UINT32 mMinCol;
+UINT32 mMaxCol;
+UINT32 mMinRow;
+UINT32 mMaxRow;
+
+RobeChannel mRobeChannel;
+
+if(version >= 7)
+{
+    // Added in v7: dynamic compression range for increased precision. The char data
+    // coming in with the range of [0-255] is mapped to [MinVal - (MinVal+Delta)]
+    //
+    // V6 and eariler resources will use the old defaults, as follows:
+    //
+    //    if (shapeOrNormals == SHAPE_DEFORMER)
+    //    {
+    //        mSkintightMinVal = mRobeMinVal = -0.2f;
+    //        mSkintightDelta = mRobeDelta = 0.4f;
+    //    }
+    //    else
+    //    {
+    //        mSkintightMinVal = mRobeMinVal = -0.75f;
+    //        mSkintightDelta = mRobeDelta = 1.5f;
+    //    }
+
+    float mSkintightMinVal;
+    float mSkintightDelta;
+
+    if (mRobeChannel==ROBECHANNEL_PRESENT)
+    {
+        float mRobeMinVal;
+        float mRobeDelta;
+    }
+}
+
+
+// This can be 0 for some normals.
+UINT32 totalBytesInTheEncodedMap;  
+
+local uint32 width = mMaxCol - mMinCol + 1;
+local uint32 numScanLines = mMaxRow - mMinRow + 1;
+
+struct ScanLine
+{
+    UINT16 mScanLineDataSize;
+
+    // Uncompressed or Indexed RLE compreession?
+    // Uncompressed is a simpler format, but is less optimal to load and use.
+    UCHAR mbIsCompressed;
+
+    RobeChannel mRobeChannel;
+
+    if (mbIsCompressed==0)
+    {
+        if (mRobeChannel==ROBECHANNEL_PRESENT)
+        {   
+            // If robe is present, robe and skin tight are interleaved.  
+            // i.e. skin tight pixel, robe pixel, skin tight pixel, robe pixel, etc.
+            // Thus each pixel takes 6 bytes.
+            UCHAR mUncompressedPixels[width*6];
+        }
+        else
+        {
+            UCHAR mUncompressedPixels[width*3];
+        }
+    }
+    else
+    {
+        UCHAR numIndexes; // must be > 1
+
+        // The goal of having index tables (mPixelPosIndexes & mDataPosIndexes) is to provide faster shortcuts 
+        // into the RLE data where run-time client can start decoding data to obtain a value at a particular pixel 
+        // position x without decoding the entire preceding scanline.
+        // See DMap-To-BMP.sc for examples on how to used these indexes.
+        UINT16 mPixelPosIndexes[numIndexes];
+        UINT16 mDataPosIndexes[numIndexes];
+
+        local uint32 headerdatasize = 4 + 1 + (4 * numIndexes);
+
+        // The RLE data is an array if chars, organized as follows:
+        //  Byte 0      : Size of run
+        //  Byte 1,2,3  : Pixel info for skin tight data
+        //  Byte 4,5,6  : Pixel info for robe data (if present)
+        //  Repeat
+        UCHAR mRLEArrayOfPixels[mScanLineDataSize - headerdatasize];
+    }
+};
+
+ScanLine mScanLine[numScanLines] <optimize=false>;

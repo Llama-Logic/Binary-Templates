@@ -1,0 +1,173 @@
+//--------------------------------------
+// The Sims 4
+// Copyright 2015 Electronic Arts Inc. All rights reserved.
+//
+//--- 010 Editor v5.0.2 Binary Template
+// Resource Type: Object Slot Resource (0xd3044521) Version 8
+//--------------------------------------
+
+//
+// ResourceKey
+//
+typedef struct
+{
+    UINT64 instance <format=hex>;
+    UINT32 type <format=hex>;
+    UINT32 group <format=hex>;
+} ResourceKey <read=ReadResourceKey>;
+
+string ReadResourceKey(ResourceKey& key)
+{
+    string s;
+    SPrintf(s, "%08x:%08x:%016Lx", key.type, key.group, key.instance);
+    return s;
+}
+
+//
+//  Context Data
+//
+typedef struct
+{
+    UINT32 position <format=hex>;
+    UINT32 length;
+} ObjectData;
+
+typedef struct
+{
+    UINT32 mContextversion;
+
+    if(mContextversion != 3)
+    {
+        Warning("Context data version 3 expected.");
+        return -1;
+    }
+
+    UINT32 mPublicKeyCount;
+    UINT32 mExternalKeyCount;
+    UINT32 mDelayLoadKeyCount;
+    UINT32 mObjectCount;
+    
+    if(mPublicKeyCount > 0)
+    {
+        ResourceKey mPublicObject[mPublicKeyCount];
+    }
+    if(mObjectCount-mPublicKeyCount > 0)
+    {
+        ResourceKey mPrivateObject[mObjectCount-mPublicKeyCount];
+    }
+    if(mExternalKeyCount > 0)
+    {
+        ResourceKey mExternalReferences[mExternalKeyCount];
+    }
+    if(mDelayLoadKeyCount > 0)
+    {
+        ResourceKey mDelayLoadReferences[mDelayLoadKeyCount];
+    }
+    if(mObjectCount > 0)
+    {
+        ObjectData mObjectData[mObjectCount];
+    }
+} ContextData;
+
+ContextData mContextData;
+
+//
+//
+//
+char signature[4];
+if(signature != "RSLT" )
+{
+    Warning("Invlaid Signature.");
+    return -1;
+}
+
+uint32 version;
+if(version != 8 )
+{
+    Warning("Invlaid Version.");
+    return -1;
+}
+
+enum SlotType
+{
+    SLOT_ROUTING,
+    SLOT_CONTAINMENT,
+    SLOT_FX,
+    SLOT_TARGET,
+    SLOT_CONE,
+    SLOT_TYPECOUNT
+};
+
+uint32 mSlotCounts[SLOT_TYPECOUNT];
+
+typedef struct 
+{
+    float x,y,z,w;
+} vec4;
+
+typedef struct 
+{
+    vec4 matrixdata[3];
+} displacement;
+
+struct ConeData
+{
+    float radius;
+    float angle;
+};
+
+struct OffsetData
+{
+    uint32 idx;
+    float pos[3];
+    float rot[3];
+};
+
+typedef struct(int type, int count)
+{
+    uint32 pointSlotNameHashes[count] <format=hex>;
+    uint32 targetBoneHashes[count] <format=hex>;
+
+    if (type==SLOT_CONTAINMENT)
+    {
+        char containmentSlotSizes[count];
+        uint64 containmentSlotTypeSets[count];
+        char containmentSlotDirectionLocked[count];
+        uint32 containmentSlotLegacyHashes[count];
+    }
+    
+    displacement slotDisplacements[count];
+    
+    if (type==SLOT_CONE)
+    {
+        ConeData codedata[count];
+    }
+
+    uint32 offsetcount;
+    if (offsetcount > 0)
+    {
+        OffsetData offsetdata[offsetcount];
+    }
+
+} Slot;
+
+if (mSlotCounts[SLOT_ROUTING] > 0)
+{
+    Slot SlotRouting(SLOT_ROUTING,mSlotCounts[SLOT_ROUTING]);
+}
+if (mSlotCounts[SLOT_CONTAINMENT] > 0)
+{
+    Slot SlotContainment(SLOT_CONTAINMENT,mSlotCounts[SLOT_CONTAINMENT]);
+}
+if (mSlotCounts[SLOT_FX] > 0)
+{
+    Slot SlotFX(SLOT_FX,mSlotCounts[SLOT_FX]);
+}
+if (mSlotCounts[SLOT_TARGET] > 0)
+{
+    Slot SlotTarget(SLOT_TARGET,mSlotCounts[SLOT_TARGET]);
+}
+if (mSlotCounts[SLOT_CONE] > 0)
+{
+    Slot SlotCone(SLOT_CONE,mSlotCounts[SLOT_CONE]);
+}

@@ -1,0 +1,235 @@
+//--------------------------------------
+// The Sims 4
+// Copyright 2016 Electronic Arts Inc. All rights reserved.
+//
+//--- 010 Editor v6.0.2 Binary Template
+// Resource Type: Binary template for BROBX Audio Configuration file (type 0xfd04e3be) Version 2
+//--------------------------------------
+
+//
+//  Hash Maps
+//
+typedef struct
+{
+    typedef struct
+    {
+        UINT64 key <format=hex>;
+        FLOAT value;
+    } HashEntry64_Float;
+
+    UINT32 size;
+    if (size!=0)
+    {
+        HashEntry64_Float data[size];
+    }
+} HashMap64_Float;
+
+typedef struct
+{
+    typedef struct
+    {
+        UINT32 key <format=hex>;
+        FLOAT value;
+    } HashEntry32_Float;
+
+    UINT32 size;
+    if (size!=0)
+    {
+        HashEntry32_Float data[size];
+    }
+} HashMap32_Float;
+
+
+typedef struct
+{
+    typedef struct
+    {
+        UINT64 key <format=hex>;
+        UCHAR value;
+    } HashEntry64_Bool;
+
+    UINT32 size;
+    if (size!=0)
+    {
+        HashEntry64_Bool data[size];
+    }
+} HashMap64_Bool;
+
+
+typedef struct
+{
+    typedef struct
+    {
+        UINT64 key <format=hex>;
+        UINT32 value;
+    } HashEntry64_UINT32;
+
+    UINT32 size;
+    if (size!=0)
+    {
+        HashEntry64_UINT32 data[size];
+    }
+} HashMap64_UINT32;
+
+//
+//  ConfigurationEntry
+//
+enum <UINT16> eDataType
+{
+    CEDT_UNKNOWN,
+    CEDT_FLOAT,
+    CEDT_UINT32,
+    CEDT_UINT64,
+    CEDT_BOOL,
+    CEDT_STRING,
+    CEDT_CURVE,
+    CEDT_LONG_SET,
+};
+
+typedef struct
+{
+    FLOAT inputValue;
+    FLOAT outputValue;
+    FLOAT previousInputValue;
+    FLOAT previousOutputValue;
+    FLOAT deltaRatio;
+} ResponseCurveData;
+
+typedef struct
+{
+    UINT32 key <format=hex>;
+
+    eDataType dataType;
+
+    switch (dataType)
+    {
+        case CEDT_FLOAT:
+            FLOAT value_float;
+            break;
+
+        case CEDT_UINT32:
+            UINT32 value_uint32;
+            break;
+
+        case CEDT_UINT64:
+            UINT64 value_uint64 <format=hex>;
+            break;
+
+        case CEDT_BOOL:
+            UCHAR  value_bool;
+            break;
+
+        case CEDT_STRING:
+            UINT32 string_length;
+            if (string_length!=0)
+            {
+                CHAR value_string[string_length];
+            }
+            break;
+
+        case CEDT_CURVE:
+            UINT32 curve_data_size;
+            if (curve_data_size!=0)
+            {
+                ResponseCurveData value_curve[curve_data_size];
+            }
+            break;
+
+        case CEDT_LONG_SET:
+            UINT32 long_set_data_size;
+            if (long_set_data_size!=0)
+            {
+                UINT64 value_long_set[long_set_data_size];
+            }
+            break;
+            
+        case CEDT_UNKNOWN:
+        default:
+            Warning("Unsupported dataType encountered.");
+            return -1;
+            break;
+    }
+} ConfigurationEntry;
+
+
+//
+//  BROBX
+//
+UINT16 version;
+if(version != 1 && version != 2)  // Base Game shipped with Version 1
+{
+    Warning("Unknown version detected.");
+    return -1;
+}
+
+UINT64 parentKey <format=hex>;
+
+UINT32 sampleSize;
+if (sampleSize!=0)
+{
+    UINT64 samples[sampleSize] <format=hex>;
+}
+
+typedef struct
+{
+    UINT32 numConfigEntries;
+    if (numConfigEntries!=0)
+    {
+        ConfigurationEntry configEntries[numConfigEntries] <optimize=false>;
+    }
+} GlobalCondition;
+
+UINT32 globalConditionSize;
+if (globalConditionSize!=0)
+{
+    GlobalCondition globalConditions[globalConditionSize] <optimize=false>;
+}
+
+typedef struct
+{
+    typedef struct
+    {
+        UINT32 key <format=hex>;
+        UINT32 size;
+        if (size!=0)
+        {
+            FLOAT data[size];
+        }
+    } InteractiveMusicEntry;
+
+    UINT32 interactiveMusicSize;
+    if (interactiveMusicSize!=0)
+    {
+        InteractiveMusicEntry entry[interactiveMusicSize] <optimize=false>;
+    }
+} InteractiveMusic;
+InteractiveMusic iMusic;
+
+HashMap64_Float     moodPitchChange;
+HashMap64_Float     moodFreqPeriods;
+HashMap64_Float     moodFreqOffsets;
+HashMap64_Float     moodAttenuations;
+HashMap64_Bool      moodPlays;
+HashMap32_Float     vuMeterFacialOverlayModsOffset;
+HashMap32_Float     vuMeterFacialOverlayModsScale;
+FLOAT               gain;
+FLOAT               attenuation;
+UCHAR               bAggregateGain;
+
+const int kNumPolyphonyLevels = 3;
+UCHAR bPolyphonyDiffersFromBase[kNumPolyphonyLevels];
+
+typedef struct
+{
+    UINT32 numProperties;
+    if (numProperties!=0)
+    {
+        ConfigurationEntry property[numProperties] <optimize=false>;
+    }
+} Properties;
+Properties properties;
+
+if (version>=2)
+{
+    HashMap64_UINT32 samplesWeights;
+}

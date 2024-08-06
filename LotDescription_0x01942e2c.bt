@@ -1,0 +1,42 @@
+//--------------------------------------
+// The Sims 4
+// Copyright 2016 Electronic Arts Inc. All rights reserved.
+//
+//--- 010 Editor v7.0.2 Binary Template
+// Resource Type: Lot Description Resource (0x01942e2c) Version 9
+//--------------------------------------
+
+uint32 version;
+if(version != 9)
+{
+    Warning("Invalid Version.");
+    return -1;
+}
+
+uint64 worldDescriptionInstanceId   <format=hex>; // World this lot belongs to
+uint32 lotId                        <format=hex>;
+uint32 simoleonPrice;
+char lotSizeX;
+char lotSizeZ;
+char isEditable;
+
+uint64 ambienceFileInstanceId       <format=hex>;
+uchar enabledForAutoTest;
+
+uchar hasOverrideAmbience;
+uint64 audioEffectFileInstanceId    <format=hex>;
+
+uchar disableBuildBuy;
+uchar hideFromLotPicker;
+
+uint32 buildingNameKey              <format=hex>;
+
+float cameraPosX;
+float cameraPosY;
+float cameraPosZ;
+
+float cameraTargetX;
+float cameraTargetY;
+float cameraTargetZ;
+
+uint64 lotRequirementsVenue;
