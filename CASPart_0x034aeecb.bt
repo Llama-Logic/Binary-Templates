@@ -3,7 +3,7 @@
 // Copyright 2017 Electronic Arts Inc.
 //
 //--- 010 Editor v5.0 Binary Template
-// Resource Type: PartDataResource (type 0x034aeecb) Version 42
+// Resource Type: PartDataResource (type 0x034aeecb) Version 49
 //--------------------------------------
 
 LittleEndian();
@@ -190,7 +190,7 @@ typedef struct
 // PartDataResource::Load
 
 UINT32 version;
-if(version < 26 || version > 42)  // Base Game shipped with version 26
+if(version < 26 || version > 49)  // Base Game shipped with version 26
 {
     Warning("Unknown version of PartDataResource detected. Please update the template");
     return -1;
@@ -272,6 +272,10 @@ else
 UINT32 mDepricated;
 UINT32 mPartTitleKey <format=hex>;
 UINT32 mPartDescKey <format=hex>;
+if (version >= 43)
+{
+    UINT32 mGameplayLockedDescKey;
+}
 BYTE mbUniqueTextureSpace;
 INT32 mBodyType;
 
@@ -289,13 +293,14 @@ typedef struct
     UINT32 reserved_2     : 18;  // Set to 0
     UINT32 Gender_Female  : 1;
     UINT32 Gender_Male    : 1;
-    UINT32 reserved_1     : 5;  // Set to 0
+    UINT32 reserved_1     : 4;  // Set to 0
+    UINT32 Age_Infant     : 1;
     UINT32 Age_Elder      : 1;
     UINT32 Age_Adult      : 1;
     UINT32 Age_YoungAdult : 1;
     UINT32 Age_Teen       : 1;
     UINT32 Age_Child      : 1;
-    UINT32 reserved_0     : 1;  // Set to 0
+    UINT32 Age_Toddler    : 1;
     UINT32 Age_Baby       : 1;
 
 } AgeGenderFlags;
@@ -354,7 +359,11 @@ if(version >= 30)
 
 typedef struct
 {
-    UINT32 reserved : 30;
+    UINT32 reserved : 26;
+    UINT32 werewolf    : 1;
+    UINT32 spellcaster    : 1;
+    UINT32 mermaid    : 1;
+    UINT32 vampire    : 1;
     UINT32 alien    : 1;
     UINT32 human    : 1;
 } OccultBitField;
@@ -362,6 +371,12 @@ typedef struct
 if(version >= 31)
 {
     OccultBitField mHideForOccultFlags;
+}
+if(version >= 36)
+{
+    //Could be wrong
+    OccultBitField mUnknownForOccultFlags1;
+    OccultBitField mUnknownForOccultFlags2;
 }
 
 if(version >= 38)
@@ -380,7 +395,26 @@ if(version >= 39)
     // necessarily the opposite gendered version of the part. Set to 0 for none.
     UINT64 mFallbackPart <format=hex>;
 }
-
+if(version >= 44)
+{
+    FLOAT mSliderOpacityMinimumValue;
+    FLOAT mSliderOpacityStepValue;
+    FLOAT mSliderHueMinimumValue;
+    FLOAT mSliderHueMaximumValue;
+    FLOAT mSliderHueStepValue;
+    FLOAT mSliderSaturationMinimumValue;
+    FLOAT mSliderSaturationMaximumValue;
+    FLOAT mSliderSaturationStepValue;
+    FLOAT mSliderBrightnessMinimumValue;
+    FLOAT mSliderBrightnessMaximumValue;
+    FLOAT mSliderBrightnessStepValue;
+}
+if(version >= 46)
+{
+    
+    BYTE numLinkedPartCount;
+    BYTE mLinkedParts[numLinkedPartCount] <read=ReadIndexedKey>;
+}
 BYTE mNakedKey <read=ReadIndexedKey>;
 BYTE mParentKey <read=ReadIndexedKey>;
 INT32 mSortLayer;
@@ -434,4 +468,9 @@ if(version >= 29)
 if(version >= 42)
 {
     BYTE mBasePositionDeformerKey <read=ReadIndexedKey>;
+}
+
+if(version >= 49)
+{
+    BYTE mColorShiftMaskKey <read=ReadIndexedKey>;
 }
