@@ -1,0 +1,58 @@
+//------------------------------------------------
+//--- 010 Editor v15.0.1 Binary Template
+//
+//      File: HouseholdDescription.bt
+//   Authors: Daniel Henry, based on Andrew's S4S Logic
+//   Purpose: Specifies metadata concerning City Living, Discover University, Eco Lifestyle, and For Rent residential rentals
+//------------------------------------------------
+
+LittleEndian();
+BitfieldRightToLeft();
+
+uint32 version;
+uint32 lotNameLocKey;
+uint32 lotDescriptionLocKey;
+uint32 unused[8];
+byte bedroomCount;
+byte bathroomCount;
+if (version > 7)
+{
+    // EP03 or later
+    uint32 activePlex;
+    int32 rentCost;
+    int32 deposit;
+    if (version >= 11)
+    {
+        // EP08 or later
+        uint32 universityNumberOfBeds;
+        uint32 gender;
+        uint64 universityTuningId;
+        uint64 organizationId;
+    }
+}
+uint32 u1;
+uint32 u2;
+uint64 lotTemplateId;
+uint64 style;
+uint64 lotDescription;
+uint32 householdNameLocKey;
+uint32 householdDescriptionLocKey;
+uint64 householdTemplate;
+if (version > 11)
+{
+    // EP08 or later
+    uint64 venueTuningId;
+    byte b1;
+    float f1;
+    if (version >= 18)
+    {
+        // EP15 or later
+        uint16 rentalLeaseLength;
+        byte rentalUnitNumber;
+        uint32 rentalNameLength;
+        char rentalName[rentalNameLength];
+        uint32 rentalUnknown;
+        uint32 rentalActivePlex;
+        int32 rentalUnitSize;
+    }
+}
